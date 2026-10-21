@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { generateSingleTaskAI } from '@/data/ai'
 import { generateMaterialAI, verifyBlockAnswers } from '@/data/materialGeneration'
 import { GenerationCancelled, runGeneration, type GenerationStage } from '@/data/generationControl'
-import { anotherCardNote, CARD_KIND_LABELS, draftForExport, materialTypeOf, modeParamsOf, replaceBlockKeepingSlot } from '@/data/materialModes'
+import { anotherCardNote, CARD_KIND_LABELS, stripCardHeading, draftForExport, materialTypeOf, modeParamsOf, replaceBlockKeepingSlot } from '@/data/materialModes'
 import type { GenerateMode } from '@/data/ai'
 import {
   createEmptyBlock,
@@ -529,6 +529,7 @@ export default function App() {
       )
       const [block] = verifyBlockAnswers([fresh])
       block.page = prev.page
+      block.question = stripCardHeading(block.question)
       block.title = `Карточка ${cards.length + 1}. ${CARD_KIND_LABELS[kind]}`
       setDraft((d) => syncPagesFromBreaks({ ...d, blocks: [...d.blocks, block], taskCount: d.taskCount + 1 }))
       setSelectedBlockId(block.id)

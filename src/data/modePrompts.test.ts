@@ -25,3 +25,11 @@ describe('режимы из документа с промптами', () => {
     expect(cardsPrompt(base, 'support', 4)).toContain('Тип карточки: Нужна опора')
   })
 })
+
+import { stripCardHeading } from './materialModes'
+describe('заголовок карточки', () => {
+  it('убирается из текста задания', () => {
+    expect(stripCardHeading('Карточка 2. Нужна опора.\n\nВычисли сумму.')).toBe('Вычисли сумму.')
+    expect(stripCardHeading('Вычисли сумму.')).toBe('Вычисли сумму.')
+  })
+})
