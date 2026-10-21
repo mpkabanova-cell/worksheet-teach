@@ -767,7 +767,7 @@ export default function App() {
           }
           onHome={() => {
             genAbortRef.current?.abort()
-            localStorage.removeItem(PENDING_KEY)
+            clearPending(localStorage, draftRef.current.id)
             setGenError(null)
             setScreen('home')
           }}
