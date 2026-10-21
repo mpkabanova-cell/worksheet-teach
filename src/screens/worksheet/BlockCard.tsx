@@ -21,6 +21,8 @@ import {
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
 import { stripDuplicateAnswer } from '@/data/materialModes'
+import { changeTaskPoints } from '@/data/assessmentCriteria'
+import { CriteriaLevelsView } from '@/components/CriteriaLevelsView'
 import { MathText } from '@/components/MathText'
 import { WysiwygTextarea } from '@/components/WysiwygTextarea'
 import { FigmaIcon } from '@/components/ui'
@@ -331,7 +333,7 @@ export function BlockCard({
                   </p>
                 )}
               </div>
-              {isEditing || (showDifficulty && block.difficulty) ? (
+              {block.points == null && (isEditing || (showDifficulty && block.difficulty)) ? (
                 <div className="ws-task-meta">
                   <span className="diff-label">Сложность:</span>
                   {isEditing && !block.difficulty ? <span className="diff-label">не указана</span> : null}
@@ -346,10 +348,15 @@ export function BlockCard({
                 </div>
               ) : null}
             </div>
-            {!isEditing && block.points != null && block.points > 0 ? (
-              <span className="ws-task-points" title="Максимум баллов за задание">
-                {pointsLabel(block.points)}
-              </span>
+            {block.points != null && block.points > 0 ? (
+              <div className="ws-task-points" title="Максимум баллов за задание" onClick={(e) => e.stopPropagation()}>
+                {isEditing ? <label className="ws-task-points-editor">
+                  <input type="number" min={1} max={5} step={1} aria-label={`Баллы за задание ${taskNumber}`}
+                    value={block.points}
+                    onChange={(e) => onChangeBlock?.(changeTaskPoints(block, e.target.valueAsNumber))} />
+                  <span>балл{block.points === 1 ? '' : block.points < 5 ? 'а' : 'ов'}</span>
+                </label> : pointsLabel(block.points)}
+              </div>
             ) : null}
           </div>
         ) : (
@@ -407,8 +414,7 @@ export function BlockCard({
 
         {effectiveShowAnswer && !isEditing && (block.solution || block.points || block.criteria) ? (
           <div className="ws-teacher-key" aria-label="Для учителя">
-            {block.points ? <span>Баллы: {block.points}</span> : null}
-            {block.criteria ? <span>Критерии: {block.criteria}</span> : null}
+            {block.criteria ? <div><strong>Критерии</strong><CriteriaLevelsView text={block.criteria} /></div> : null}
             {block.solution ? (
               <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
             ) : null}

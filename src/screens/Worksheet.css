@@ -3516,7 +3516,7 @@
 .ws-save-link:hover { text-decoration: underline; }
 .ws-save-link:focus-visible, .ws-group-tabs button:focus-visible { outline: 2px solid var(--border-brand); outline-offset: 2px; }
 .ws-group-tabs {
-  display: flex; gap: 4px; padding: 8px 24px 0; overflow-x: auto;
+  display: flex; gap: 4px; flex-shrink: 0;
 }
 .ws-group-tabs button {
   border: 1px solid var(--border-secondary); background: var(--bg-white); color: var(--text-secondary);
@@ -3529,7 +3529,7 @@
 }
 .ws-audience-note.teacher { color: var(--text-brand); background: var(--bg-brand-soft); }
 .ws-audience-switch {
-  margin: 8px 24px 0; align-self: flex-start; display: flex; gap: 8px; flex-wrap: wrap;
+  display: flex; gap: 8px; flex-shrink: 0;
 }
 .ws-audience-switch button {
   border: 1px solid var(--border-secondary); background: var(--bg-white); color: var(--text-secondary);
@@ -3568,7 +3568,15 @@
   .ws-task-wrap .block-tools, .ws-task-wrap [class*="widget"] { opacity: 1 !important; visibility: visible !important; }
 }
 .ws-teacher-key { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--text-brand); background: var(--bg-brand-soft); border-radius: 8px; padding: 8px 12px; }
-.ws-task-points { margin-left: auto; align-self: flex-start; flex-shrink: 0; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border-secondary); border-radius: 999px; padding: 2px 10px; }
+.ws-material-tabs { display: flex; align-items: center; gap: 8px; padding: 8px 24px; overflow-x: auto; }
+.ws-material-tabs button { white-space: nowrap; }
+.ws-task-head:has(.ws-task-points) { display: grid; grid-template-columns: 32px minmax(0, 1fr) 88px; column-gap: 8px; padding-right: 0; }
+.ws-task-points { justify-self: end; align-self: start; width: 88px; height: 28px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border-secondary); border-radius: 8px; }
+.ws-task-points-editor { display: flex; align-items: center; gap: 3px; }
+.ws-task-points-editor input { width: 36px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; }
+.ws-task-points:focus-within { outline: 2px solid var(--border-brand); outline-offset: 2px; }
+.criteria-levels { display: grid; gap: 4px; }
+@media print { .ws-material-tabs { display: none !important; } }
 .grading-skill-name { font-weight: 500; }
 .grading-expand { display: block; background: none; border: none; padding: 0; margin-top: 2px; font-size: 12px; color: var(--text-brand); cursor: pointer; }
 .ws-navbar-left { flex: 1 1 auto; }

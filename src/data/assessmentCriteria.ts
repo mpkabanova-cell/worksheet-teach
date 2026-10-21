@@ -31,11 +31,25 @@ export function formatCriteriaLevels(levels: CriteriaLevel[]): string {
 export function parseCriteriaLevels(text: string | undefined): CriteriaLevel[] {
   if (!text) return []
   const out: CriteriaLevel[] = []
-  for (const line of text.split(/\n|;\s*(?=\d+\s*балл)/u)) {
+  for (const line of criteriaDisplayLines(text)) {
     const m = LEVEL_RE.exec(line)
     if (m) out.push({ points: Number(m[1]), description: m[2] })
   }
   return out
+}
+
+/** Разделяет также старые критерии, записанные моделью в одну строку. */
+export function criteriaDisplayLines(text: string): string[] {
+  return text.split(/\n|\s*(?=\d+\s*балл\p{L}*\s*[—–:-])/u)
+    .map((line) => line.trim().replace(/[;.]$/, '').trim())
+    .filter(Boolean)
+}
+
+/** При изменении максимума критерии обязательно требуют повторной проверки. */
+export function changeTaskPoints(block: WorksheetBlock, points: number): WorksheetBlock {
+  if (!Number.isFinite(points) || !Number.isInteger(points) || points < 1 || points > 5) return block
+  if (points === block.points) return block
+  return ensureCriteriaLevels({ ...block, points, criteriaStatus: 'needs-review' })
 }
 
 /** Все уровни от max до 0 описаны ровно по одному разу. */

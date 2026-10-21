@@ -348,48 +348,42 @@ export function WorksheetScreen({
         </div>
       </header>
 
+      <div className="ws-material-tabs">
       {groupTabs && groupTabs.length > 0 ? (
         <div className="ws-group-tabs" role="tablist" aria-label="Варианты и комплекты">
           {groupTabs.map((g) => (
-            <button
+            <Button variant="ghost" size="sm"
               key={g.id}
               type="button"
               role="tab"
-              aria-selected={activeGroupId === g.id}
-              className={activeGroupId === g.id ? 'active' : ''}
-              onClick={() => onGroupChange?.(g.id)}
+              aria-selected={activeGroupId === g.id && !showAnswers}
+              className={activeGroupId === g.id && !showAnswers ? 'active' : ''}
+              onClick={() => {
+                if (showAnswers) onChangeDraft?.({ ...draft, showAnswers: false })
+                onGroupChange?.(g.id)
+              }}
             >
               {g.label}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}
       {!isEdit ? (
         <div className="ws-audience-switch" role="tablist" aria-label="Версия материала">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!showAnswers}
-            className={showAnswers ? '' : 'active'}
-            onClick={() => {
-              if (showAnswers) onChangeDraft?.({ ...draft, showAnswers: false })
-            }}
-          >
-            Для ученика
-          </button>
-          <button
+          <Button variant="ghost" size="sm"
             type="button"
             role="tab"
             aria-selected={showAnswers}
             className={showAnswers ? 'active' : ''}
             onClick={() => {
-              if (!showAnswers) onChangeDraft?.({ ...draft, showAnswers: true })
+              onChangeDraft?.({ ...draft, showAnswers: !showAnswers })
             }}
           >
             Ответы и оценивание
-          </button>
+          </Button>
         </div>
       ) : null}
+      </div>
       {onAnotherCard ? (
         <div className="ws-another-card">
           <Button variant="secondary" size="sm" type="button" disabled={anotherCardBusy} onClick={onAnotherCard}>

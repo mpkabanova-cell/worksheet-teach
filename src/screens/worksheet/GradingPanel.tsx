@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MathText } from '@/components/MathText'
+import { CriteriaLevelsView } from '@/components/CriteriaLevelsView'
 import { blockAnswerText, modeParamsOf } from '@/data/materialModes'
 import { isNumberedTaskBlock, platformTaskNumbers } from '@/data/assessmentCriteria'
 import { defaultGradeScale, gradeForPoints, isValidGradeScale, pointsLabel, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
@@ -78,7 +79,7 @@ export function GradingPanel({
                       {b.criteria ? (
                         <div className="grading-row">
                           <span>Критерии</span>
-                          <MathText as="div" text={b.criteria} />
+                          <CriteriaLevelsView text={b.criteria} />
                         </div>
                       ) : null}
                       {!b.solution && !b.criteria ? <p className="grading-empty">Решение и критерии не указаны.</p> : null}
