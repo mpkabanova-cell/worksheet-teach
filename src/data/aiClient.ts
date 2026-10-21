@@ -1,4 +1,5 @@
 import { sanitizeAiJsonText } from './mathTextUtils'
+import { GenerationCancelled, callSignal, throwIfCancelled } from './generationControl'
 
 export const AUTH_ERROR_USER_MESSAGE =
   'OpenRouter отклонил ключ API. Обновите OPENAI_API_KEY (или OPENROUTER_API_KEY) в Render → Environment или в локальном .env — нужен актуальный ключ sk-or-... с openrouter.ai/keys.'
@@ -138,18 +139,27 @@ export async function chatJson<T>(
             { role: 'user', content: user },
           ]
 
+    throwIfCancelled()
+    const call = callSignal()
     let res: Response
+    let raw: string
     try {
       res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, messages, temperature: (payload.temperature as number) - attempt * 0.05 }),
+        signal: call.signal,
       })
+      raw = await res.text()
     } catch {
+      if (call.timedOut()) {
+        throw new AiError('Модель не ответила вовремя. Попробуйте ещё раз — параметры сохранены.')
+      }
+      if (call.signal.aborted) throw new GenerationCancelled()
       throw new AiError('NO_API')
+    } finally {
+      call.dispose()
     }
-
-    const raw = await res.text()
 
     if (res.status === 503) {
       throw new AiError('NO_API_KEY')

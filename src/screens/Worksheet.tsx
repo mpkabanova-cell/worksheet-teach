@@ -118,6 +118,10 @@ interface WorksheetScreenProps {
   onUndo?: () => void
   onRedo?: () => void
   onSoon?: (message: string) => void
+  onReplaceBlock?: (id: string) => void
+  groupTabs?: { id: string; label: string }[]
+  activeGroupId?: string | null
+  onGroupChange?: (id: string) => void
 }
 
 export function WorksheetScreen({
@@ -148,10 +152,14 @@ export function WorksheetScreen({
   onCloseAddBlock: _onCloseAddBlock,
   onGenerateTask,
   onRegenerate,
-  onSave: _onSave,
+  onSave,
   onUndo,
   onRedo,
   onSoon,
+  onReplaceBlock,
+  groupTabs,
+  activeGroupId,
+  onGroupChange,
 }: WorksheetScreenProps) {
   const selected = draft.blocks.find((b) => b.id === selectedBlockId) ?? null
   const isEdit = mode === 'edit' || mode === 'edit-widget' || mode === 'add-block'
@@ -286,7 +294,14 @@ export function WorksheetScreen({
             <span>/</span>
             <span className="current">{materialTitle}</span>
           </nav>
-          <span className="ws-saved">{formatSavedAgo(draft.savedAt)}</span>
+          <span className="ws-saved" role="status">
+            {draft.savedAt ? formatSavedAgo(draft.savedAt) : 'Черновик сохранён в браузере'}
+          </span>
+          {onSave ? (
+            <button type="button" className="ws-save-link" onClick={onSave}>
+              {draft.savedAt ? 'Сохранить ещё раз' : 'Сохранить в материалы'}
+            </button>
+          ) : null}
         </div>
 
         <div className="ws-actions">
@@ -296,31 +311,53 @@ export function WorksheetScreen({
 
           {isEdit ? (
             <>
-              <Button variant="secondary" size="sm" onClick={() => onSoon?.('Интерактивный режим скоро')}>
-                Сделать интерактивным
+              <Button variant="secondary" size="sm" disabled title="Интерактивный режим появится позже">
+                Интерактив — скоро
               </Button>
               <Button variant="secondary" size="sm" onClick={onPreview}>
                 <Icon name="eye" size={20} /> Предпросмотр
               </Button>
               <Button variant="brand" size="sm" onClick={onDownload}>
-                Распечатать
+                Скачать / печать
               </Button>
             </>
           ) : (
             <>
-              <Button variant="secondary" size="sm" onClick={() => onSoon?.('Интерактивный режим скоро')}>
-                Сделать интерактивным
+              <Button variant="secondary" size="sm" disabled title="Интерактивный режим появится позже">
+                Интерактив — скоро
               </Button>
               <Button variant="secondary" size="sm" onClick={onEdit}>
                 <Icon name="edit" size={20} /> Редактировать
               </Button>
               <Button variant="brand" size="sm" onClick={onDownload}>
-                Распечатать
+                Скачать / печать
               </Button>
             </>
           )}
         </div>
       </header>
+
+      {groupTabs && groupTabs.length > 0 ? (
+        <div className="ws-group-tabs" role="tablist" aria-label="Варианты и комплекты">
+          {groupTabs.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              role="tab"
+              aria-selected={activeGroupId === g.id}
+              className={activeGroupId === g.id ? 'active' : ''}
+              onClick={() => onGroupChange?.(g.id)}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {!isEdit ? (
+        <div className={`ws-audience-note ${showAnswers ? 'teacher' : ''}`} role="note">
+          {showAnswers ? 'Версия для учителя — с ответами' : 'Версия для ученика — без ответов'}
+        </div>
+      ) : null}
 
       <div className={`ws-body-layout ${hasSidePanel ? 'with-side' : ''} ${showToolsSidebar ? 'with-tools' : ''}`}>
         {showToolsSidebar ? (
@@ -347,7 +384,7 @@ export function WorksheetScreen({
         )}
 
         <main className="ws-canvas">
-          <div className={`ws-sheet ${isEdit ? 'editing' : ''} ${draft.print.orientation}`}>
+          <div className={`ws-sheet ${isEdit ? 'editing' : ''} ${draft.print.orientation} ${draft.materialType === 'cards' ? 'ws-sheet--cards' : ''}`}>
             <div className={`sheet-header ${minimalManualSheet ? 'sheet-header--manual-only' : ''}`}>
               <div className="student-line">
                 <span>Ученик:</span>
@@ -367,6 +404,9 @@ export function WorksheetScreen({
               ) : (
                 <h1 className="sheet-title">{sheetTopic}</h1>
               )}
+              {groupTabs?.length && activeGroupId && groupTabs.find((g) => g.id === activeGroupId && g.id.startsWith('variant-')) ? (
+                <p className="sheet-variant-label">{groupTabs.find((g) => g.id === activeGroupId)?.label}</p>
+              ) : null}
             </div>
 
             <div
@@ -443,7 +483,7 @@ export function WorksheetScreen({
                     onMoveUp={() => onMoveBlock?.(block.id, -1)}
                     onMoveDown={() => onMoveBlock?.(block.id, 1)}
                     onDuplicate={() => onDuplicateBlock?.(block.id)}
-                    onRegenerateBlock={() => onGenerateTask?.()}
+                    onRegenerateBlock={() => (onReplaceBlock ? onReplaceBlock(block.id) : onGenerateTask?.())}
                     onDragStart={(e) => {
                       e.dataTransfer.effectAllowed = 'move'
                       e.dataTransfer.setData('text/plain', block.id)

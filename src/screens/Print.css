@@ -88,3 +88,7 @@
     display: none;
   }
 }
+.print-audience { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.print-audience legend { font-weight: 600; margin-bottom: 4px; }
+.print-note { font-size: 13px; color: var(--text-secondary); }
+.print-actions { flex-wrap: wrap; }
