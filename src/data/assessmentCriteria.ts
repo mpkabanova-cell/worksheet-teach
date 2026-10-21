@@ -49,7 +49,7 @@ export function criteriaDisplayLines(text: string): string[] {
 export function changeTaskPoints(block: WorksheetBlock, points: number): WorksheetBlock {
   if (!Number.isFinite(points) || !Number.isInteger(points) || points < 1 || points > 5) return block
   if (points === block.points) return block
-  return ensureCriteriaLevels({ ...block, points, criteriaStatus: 'needs-review' })
+  return ensureCriteriaLevels({ ...block, points, criteriaStatus: 'needs-review', criteriaReviewReason: 'Баллы изменены вручную — проверьте критерии.' })
 }
 
 /** Все уровни от max до 0 описаны ровно по одному разу. */
@@ -126,6 +126,13 @@ export function ensureCriteriaLevels(block: WorksheetBlock): WorksheetBlock {
     points: max,
     criteria: formatCriteriaLevels(levels),
     criteriaStatus: hadModelCriteria || max > 1 ? 'needs-review' : block.criteriaStatus,
+    criteriaReviewReason: hadModelCriteria || max > 1
+      ? inventedStages
+        ? 'Модель придумала этапы решения для задания с кратким ответом — уточните частичный зачёт.'
+        : hadModelCriteria
+          ? `Модель описала не все уровни от ${max} до 0 баллов — недостающие подставлены автоматически.`
+          : 'Модель не дала критерии — уровни подставлены автоматически.'
+      : block.criteriaReviewReason,
   }
 }
 

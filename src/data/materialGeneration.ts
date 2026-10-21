@@ -169,7 +169,7 @@ async function repairPlanDescriptions(draft: WorksheetDraft, blocks: WorksheetBl
         break
       }
     }
-    out[i] = fixed ?? { ...b, criteriaStatus: 'needs-review' as const }
+    out[i] = fixed ?? { ...b, criteriaStatus: 'needs-review' as const, criteriaReviewReason: 'Условие похоже на описание из плана, а не на задание для ученика.' }
   }
   return out
 }
@@ -225,7 +225,7 @@ async function repairVariantIssues(
         if (b) marked.add(b.id)
       }
     }
-    out = out.map((b) => (marked.has(b.id) ? { ...b, criteriaStatus: 'needs-review' as const } : b))
+    out = out.map((b) => (marked.has(b.id) ? { ...b, criteriaStatus: 'needs-review' as const, criteriaReviewReason: 'Задание на этой позиции в другом варианте отличается по типу, баллам или совпадает по условию.' } : b))
   }
   return out
 }

@@ -7,7 +7,7 @@ export function teacherDetailLines(block: WorksheetBlock): string[] {
   const checked = block.points != null ? ensureCriteriaLevels(block) : block
   const solution = stripDuplicateAnswer(checked.solution, blockAnswerText(checked))
   return [
-    ...(checked.criteriaStatus === 'needs-review' ? ['Проверьте ключ и критерии'] : []),
+    ...(checked.criteriaStatus === 'needs-review' ? [checked.criteriaReviewReason ?? 'Проверьте ключ и критерии'] : []),
     ...(checked.criteria ? ['Критерии', ...criteriaDisplayLines(checked.criteria)] : []),
     ...(solution ? ['Решение', ...solution.split('\n')] : []),
   ]

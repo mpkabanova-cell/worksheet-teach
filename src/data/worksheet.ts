@@ -157,6 +157,8 @@ export interface WorksheetBlock {
   criteria?: string
   /** Ключ/критерии требуют проверки учителем (после ручной правки или конфликта вариантов). */
   criteriaStatus?: 'ok' | 'needs-review'
+  /** Почему нужна проверка — показывается учителю рядом с пометкой. */
+  criteriaReviewReason?: string
   /** Номер задания при выгрузке (совпадает с номером на платформе внутри варианта). */
   exportNumber?: number
 }
