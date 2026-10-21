@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MathText } from '@/components/MathText'
 import { blockAnswerText, modeParamsOf } from '@/data/materialModes'
-import { defaultGradeScale, gradeForPoints, isValidGradeScale, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
+import { defaultGradeScale, gradeForPoints, isValidGradeScale, pointsLabel, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
 
 /** Учительская панель «Ответы и оценивание» для работ для проверки. */
 export function GradingPanel({
@@ -79,7 +79,7 @@ export function GradingPanel({
           ))}
         </tbody>
       </table>
-      <p className="grading-total">Всего: {total} балл(ов)</p>
+      <p className="grading-total">Всего: {pointsLabel(total)}</p>
       {grading === 'grade' ? (
         <fieldset className="grading-scale">
           <legend>Шкала отметок</legend>
