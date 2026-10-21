@@ -27,6 +27,9 @@ import {
   TOPIC_MAX_LENGTH,
   USER_DESCRIPTION_MAX_LENGTH,
 } from '@/data/worksheet'
+import { MATERIAL_TYPES, type ModeParams } from '@/data/worksheet'
+import { MATERIAL_FORM_TITLE, materialTypeOf, modeParamsOf } from '@/data/materialModes'
+import { ModeFields } from './CreateModeFields'
 import './Create.css'
 
 type CreateMode = 'generate' | 'manual' | 'probe'
@@ -64,10 +67,20 @@ export function Create({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isGenerateLike = mode === 'generate' || mode === 'probe'
+  const showProbe = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('probe')
+  const materialType = materialTypeOf(draft)
+  const params = modeParamsOf(draft)
+  const setParams = <K extends keyof ModeParams>(key: K, patch: Partial<ModeParams[K]>) =>
+    onChange((prev) => {
+      const current = modeParamsOf(prev)
+      return { ...prev, modeParams: { ...current, [key]: { ...current[key], ...patch } } }
+    })
 
   useEffect(() => {
     setAdvanced(advancedOpen)
   }, [advancedOpen])
+
+  const showTaskCount = materialType === 'worksheet' || materialType === 'assessment'
 
   const canSubmit = useMemo(
     () => Boolean(draft.subject && draft.grade && draft.topic.trim()),
@@ -239,7 +252,7 @@ export function Create({
       <div className="create-inner">
         {!overlay ? (
           <header className="create-header">
-            <h1>Создание рабочего листа</h1>
+            <h1>{MATERIAL_FORM_TITLE}</h1>
             <p>
               Сгенерируйте рабочий лист — его можно будет редактировать и конвертировать в задание
               для выдачи ученикам
@@ -250,7 +263,7 @@ export function Create({
         <div className="create-shell">
           <aside className="create-sidemenu">
             {overlay ? (
-              <div className="create-sidemenu-title">Создание рабочего листа</div>
+              <div className="create-sidemenu-title">{MATERIAL_FORM_TITLE}</div>
             ) : null}
             <div className="create-sidemenu-nav">
               <button
@@ -275,20 +288,34 @@ export function Create({
               >
                 Создать вручную
               </button>
-              <button
-                type="button"
-                className={mode === 'probe' ? 'active' : ''}
-                onClick={() => setMode('probe')}
-              >
-                Технический прогон
-              </button>
+              {showProbe ? (
+                <button
+                  type="button"
+                  className={mode === 'probe' ? 'active' : ''}
+                  onClick={() => setMode('probe')}
+                >
+                  Технический прогон
+                </button>
+              ) : null}
             </div>
           </aside>
 
           <div className="create-form">
             <div className="create-form-scroll">
             <div className="create-main">
-              <div className={isGenerateLike ? 'row-3' : 'row-2'}>
+              {isGenerateLike ? (
+                <Field label="Тип материала">
+                  <Select
+                    options={MATERIAL_TYPES.map((m) => m.label)}
+                    value={MATERIAL_TYPES.find((m) => m.type === materialType)?.label}
+                    onChange={(e) => {
+                      const found = MATERIAL_TYPES.find((m) => m.label === e.target.value)
+                      if (found) onChange((prev) => ({ ...prev, materialType: found.type }))
+                    }}
+                  />
+                </Field>
+              ) : null}
+              <div className={isGenerateLike && showTaskCount ? 'row-3' : 'row-2'}>
                 <Field label="Предмет" required>
                   <Select
                     options={SUBJECTS}
@@ -305,7 +332,7 @@ export function Create({
                     onChange={(e) => onChange({ ...draft, grade: e.target.value })}
                   />
                 </Field>
-                {isGenerateLike ? (
+                {isGenerateLike && showTaskCount ? (
                   <Field label="Количество заданий" required>
                     <Select
                       options={TASK_COUNTS}
@@ -316,7 +343,7 @@ export function Create({
                 ) : null}
               </div>
 
-              <Field label="Тема рабочего листа" required>
+              <Field label="Тема" required>
                 <div className="input-with-clear">
                   <Input
                     placeholder="Например, умножение дробей"
@@ -339,6 +366,15 @@ export function Create({
                   ) : null}
                 </div>
               </Field>
+
+              {isGenerateLike && materialType !== 'worksheet' ? (
+                <ModeFields
+                  materialType={materialType}
+                  params={params}
+                  setParams={setParams}
+                  onTaskCount={(n) => syncTaskCount(String(n))}
+                />
+              ) : null}
 
               {isGenerateLike ? (
                 <>
@@ -486,6 +522,7 @@ export function Create({
                       </div>
                     </div>
 
+                    {materialType !== 'differentiated' ? (
                     <Field label="Сложность" className="difficulty-field">
                       <Select
                         options={DIFFICULTY_OPTIONS.map((d) => d.label)}
@@ -502,11 +539,13 @@ export function Create({
                         }}
                       />
                     </Field>
+                    ) : null}
 
                     <div className="switch-row">
                       <button
                         type="button"
                         role="switch"
+                        aria-label="Показывать сложность"
                         aria-checked={draft.showDifficulty}
                         className={`switch ${draft.showDifficulty ? 'on' : ''}`}
                         onClick={() =>
@@ -518,10 +557,12 @@ export function Create({
                       <span>Показывать сложность</span>
                     </div>
 
+                    {materialType === 'worksheet' ? (
                     <div className="switch-row">
                       <button
                         type="button"
                         role="switch"
+                        aria-label="Добавить вводную часть"
                         aria-checked={draft.showIntro}
                         className={`switch ${draft.showIntro ? 'on' : ''}`}
                         onClick={() => onChange({ ...draft, showIntro: !draft.showIntro })}
@@ -530,6 +571,7 @@ export function Create({
                       </button>
                       <span>Добавить вводную часть перед заданиями</span>
                     </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -548,7 +590,7 @@ export function Create({
 
             <footer className="create-footer">
               {!canSubmit ? (
-                <p className="create-footer-hint">Заполните предмет, параллель и тему, чтобы создать лист.</p>
+                <p className="create-footer-hint">Заполните предмет, параллель и тему, чтобы создать материал.</p>
               ) : fileBusy ? (
                 <p className="create-footer-hint">Обработка файла…</p>
               ) : null}
