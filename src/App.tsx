@@ -336,7 +336,20 @@ export default function App() {
   const updateBlock = (block: WorksheetBlock) => {
     setDraft((d) => ({
       ...d,
-      blocks: d.blocks.map((b) => (b.id === block.id ? block : b)),
+      blocks: d.blocks.map((b) => {
+        if (b.id !== block.id) return b
+        // Ручная правка условия или ответа — ключ и критерии надо перепроверить.
+        const contentChanged =
+          b.question !== block.question ||
+          b.body !== block.body ||
+          JSON.stringify(b.correctAnswers) !== JSON.stringify(block.correctAnswers) ||
+          b.correctOptionId !== block.correctOptionId ||
+          JSON.stringify(b.correctOptionIds) !== JSON.stringify(block.correctOptionIds) ||
+          JSON.stringify(b.gapsAnswers) !== JSON.stringify(block.gapsAnswers)
+        return contentChanged && (b.points != null || b.criteria)
+          ? { ...block, criteriaStatus: 'needs-review' as const }
+          : block
+      }),
     }))
   }
 
