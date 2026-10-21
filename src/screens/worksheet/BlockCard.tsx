@@ -398,6 +398,14 @@ export function BlockCard({
           />
         ) : null}
 
+        {effectiveShowAnswer && !isEditing && (block.solution || block.points || block.criteria) ? (
+          <div className="ws-teacher-key" aria-label="Для учителя">
+            {block.points ? <span>Баллы: {block.points}</span> : null}
+            {block.criteria ? <span>Критерии: {block.criteria}</span> : null}
+            {block.solution ? <MathText text={`Решение: ${block.solution}`} as="span" /> : null}
+          </div>
+        ) : null}
+
         {block.type === 'fill_gaps' ? (
           <div className="ws-task-slot">
             {isEditing ? (
