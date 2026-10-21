@@ -3582,8 +3582,10 @@
 .grading-table th:first-child { width: 32px; }
 .grading-table th:last-child { width: 64px; }
 .grading-table th:nth-child(3) { width: 32%; }
-.grading-table td { overflow-wrap: anywhere; }
-.grading-answer { white-space: pre-line; }
+.grading-table td { overflow-wrap: break-word; }
+.grading-table .katex, .grading-table .katex * { white-space: nowrap; overflow-wrap: normal; }
+.grading-lines { display: grid; gap: 4px; }
+
 .grading-skill-name { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
 .grading-expand { display: block; background: none; border: none; padding: 0; margin-top: 2px; font-size: 12px; color: var(--text-brand); cursor: pointer; }
 .ws-navbar-left { flex: 1 1 auto; }
@@ -3593,4 +3595,4 @@
 .ws-another-card { display:flex; justify-content:center; margin: 0 0 12px; }
 .grading-variant { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
 .grading-section + .grading-section { margin-top: 12px; }
-.grading-details .grading-row div { white-space: pre-line; }
+
