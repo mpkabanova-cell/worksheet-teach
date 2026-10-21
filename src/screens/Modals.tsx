@@ -28,6 +28,10 @@ interface ModalsProps {
   onExportDocx?: () => void
   onExportPdf?: () => void
   onSoon?: (message: string) => void
+  replaceMode?: boolean
+  onCancelGenerateTask?: () => void
+  onAcceptReplace?: () => void
+  onRevertReplace?: () => void
 }
 
 export function Modals({
@@ -51,8 +55,12 @@ export function Modals({
   onPrint,
   onSave,
   onOpen,
-  onExportDocx,
-  onExportPdf,
+  onExportDocx: _onExportDocx,
+  onExportPdf: _onExportPdf,
+  replaceMode,
+  onCancelGenerateTask,
+  onAcceptReplace,
+  onRevertReplace,
 }: ModalsProps) {
   const [convertTitle, setConvertTitle] = useState('')
   const [convertGrade, setConvertGrade] = useState('')
@@ -184,103 +192,13 @@ export function Modals({
         </div>
       </ModalShell>
 
-      <ModalShell open={modal === 'download'} onClose={onClose} width={520} className="download-modal">
-        <div className="modal-pad">
-          <div className="modal-title-row">
-            <h2>Подготовка к печати</h2>
-            <button type="button" className="icon-btn" onClick={onClose} aria-label="Закрыть">
-              <Icon name="close" />
-            </button>
-          </div>
-
-          <div className="print-section">
-            <h3>Размещение</h3>
-            <label className="radio-row">
-              <input
-                type="radio"
-                name="placement"
-                checked={!draft.print.answersSeparate}
-                onChange={() =>
-                  onChangeDraft({
-                    ...draft,
-                    print: { ...draft.print, answersSeparate: false },
-                  })
-                }
-              />
-              Печать всех материалов на одном листе
-            </label>
-            <label className="radio-row">
-              <input
-                type="radio"
-                name="placement"
-                checked={draft.print.answersSeparate}
-                onChange={() =>
-                  onChangeDraft({
-                    ...draft,
-                    print: { ...draft.print, answersSeparate: true },
-                  })
-                }
-              />
-              Вынести ответы на отдельный лист
-            </label>
-          </div>
-
-          <div className="modal-row">
-            <Field label="Количество копий">
-              <Input
-                type="number"
-                min={1}
-                max={50}
-                value={draft.print.copies}
-                onChange={(e) =>
-                  onChangeDraft({
-                    ...draft,
-                    print: { ...draft.print, copies: Math.max(1, Number(e.target.value) || 1) },
-                  })
-                }
-              />
-            </Field>
-            <Field label="Ориентация">
-              <Select
-                options={['Книжная', 'Альбомная']}
-                value={draft.print.orientation === 'portrait' ? 'Книжная' : 'Альбомная'}
-                onChange={(e) =>
-                  onChangeDraft({
-                    ...draft,
-                    print: {
-                      ...draft.print,
-                      orientation: e.target.value === 'Альбомная' ? 'landscape' : 'portrait',
-                    },
-                  })
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="modal-actions">
-            <Button variant="secondary" size="lg" onClick={() => onExportPdf?.()}>
-              PDF
-            </Button>
-            <Button variant="secondary" size="lg" onClick={() => onExportDocx?.()}>
-              DOCX
-            </Button>
-            <Button variant="secondary" size="lg" onClick={onSave}>
-              Сохранить
-            </Button>
-            <Button variant="brand" size="lg" onClick={onPrint}>
-              Распечатать
-            </Button>
-          </div>
-        </div>
-      </ModalShell>
-
       <ModalShell open={modal === 'menu'} onClose={onClose} width={360} className="menu-modal">
         <div className="menu-list">
           <button type="button" onClick={() => onOpen('settings')}>
             <Icon name="gear" /> Настройки
           </button>
           <button type="button" onClick={() => onOpen('regenerate')}>
-            <Icon name="refresh" /> Перегенерировать
+            <Icon name="refresh" /> Перегенерировать весь материал
           </button>
           <button type="button" onClick={() => onOpen('duplicate')}>
             <Icon name="copy" /> Дублировать
@@ -402,14 +320,21 @@ export function Modals({
       <ModalShell open={modal === 'generate-task'} onClose={onClose} width={480}>
         <div className="modal-pad">
           <div className="modal-title-row">
-            <h2>Сгенерировать задание</h2>
+            <h2>{replaceMode ? 'Заменить это задание' : 'Добавить задание'}</h2>
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Закрыть">
               <Icon name="close" />
             </button>
           </div>
           <p className="modal-desc">
-            Добавит одно новое задание в текущий рабочий лист без полной перегенерации.
+            {replaceMode
+              ? 'Выбранное задание будет заменено новой версией на том же месте. Остальные задания не изменятся; прежнюю версию можно будет вернуть.'
+              : 'Добавит одно новое задание в конец листа. Остальные задания не изменятся.'}
           </p>
+          {generateTaskBusy ? (
+            <p className="modal-desc" role="status">
+              Идёт генерация. Окно можно закрыть — работа продолжится, а результат появится на листе. «Отменить» останавливает генерацию.
+            </p>
+          ) : null}
           <Field label="Тип задания">
             <Select
               options={PLAN_TASK_TYPES.map((t) => t.label)}
@@ -430,11 +355,32 @@ export function Modals({
             />
           </Field>
           <div className="modal-actions">
-            <Button variant="secondary" size="lg" onClick={onClose} disabled={generateTaskBusy}>
-              Отмена
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={generateTaskBusy ? onCancelGenerateTask : onClose}
+            >
+              {generateTaskBusy ? 'Отменить генерацию' : 'Отмена'}
             </Button>
             <Button variant="brand" size="lg" onClick={onConfirmGenerateTask} disabled={generateTaskBusy}>
-              {generateTaskBusy ? 'Генерация…' : 'Сгенерировать'}
+              {generateTaskBusy ? 'Генерация…' : replaceMode ? 'Заменить' : 'Добавить'}
+            </Button>
+          </div>
+        </div>
+      </ModalShell>
+
+      <ModalShell open={modal === 'replace-review'} onClose={onAcceptReplace ?? onClose} width={440}>
+        <div className="modal-pad">
+          <div className="modal-title-row">
+            <h2>Новая версия задания готова</h2>
+          </div>
+          <p className="modal-desc">Посмотрите задание на листе. Оставить новую версию или вернуть прежнюю?</p>
+          <div className="modal-actions">
+            <Button variant="secondary" size="lg" onClick={onRevertReplace}>
+              Вернуть прежнюю
+            </Button>
+            <Button variant="brand" size="lg" onClick={onAcceptReplace}>
+              Оставить новую
             </Button>
           </div>
         </div>

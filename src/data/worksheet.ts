@@ -47,6 +47,7 @@ export type Modal =
   | 'regenerate-empty-topic'
   | 'generate-task'
   | 'delete-page'
+  | 'replace-review'
   | 'toast'
 
 /** Типы заданий из спецификации */
