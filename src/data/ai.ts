@@ -1,4 +1,5 @@
 import type { PlanTask, TaskType, WorksheetBlock, WorksheetDraft } from './worksheet'
+import { GenerationCancelled, generationBudgetExceeded, reportStage } from './generationControl'
 import { uid } from './worksheet'
 import { chatJson, AiError, isAiUnavailable } from './aiClient'
 import {
@@ -770,6 +771,7 @@ export async function generateWorksheetAI(
   let prepared = { ...draft, taskPlan: plan, taskCount: plan.length }
 
   if (needsPlanner) {
+    reportStage('plan')
     const { plan: planned, meta } = await generatePlanAIWithMeta(prepared)
     plan = planned
     prepared = withGenerationBaseline({ ...prepared, taskPlan: plan, taskCount: plan.length }, plan)
@@ -781,6 +783,7 @@ export async function generateWorksheetAI(
   const maxIndependenceRetries = options?.maxIndependenceRetries ?? 2
 
   try {
+    reportStage('tasks')
     const { system, user } = promptsForWorksheet(prepared, mode)
     let payload = await chatJson<WorksheetJsonTemplate & AiWorksheetPayload>(system, user, {
       temperature: mode === 'regenerate' ? 0.7 : 0.45,
@@ -792,7 +795,8 @@ export async function generateWorksheetAI(
     for (let attempt = 0; attempt < maxIndependenceRetries; attempt++) {
       const aiTasks = templateTasksToAiPayloads(templateTasks, plan)
       const taskIssues = validateTaskIndependence(aiTasks, planBriefs)
-      if (!taskIssues.length) break
+      if (!taskIssues.length || generationBudgetExceeded()) break
+      reportStage('check')
       payload = await chatJson<WorksheetJsonTemplate & AiWorksheetPayload>(
         system,
         user + independenceRetryNote(taskIssues),
@@ -803,6 +807,7 @@ export async function generateWorksheetAI(
 
     if (
       !options?.skipExtraIndependencePass &&
+      !generationBudgetExceeded() &&
       validateTaskIndependence(templateTasksToAiPayloads(templateTasks, plan), planBriefs).length &&
       sourceContentForDraft(prepared)
     ) {
@@ -843,13 +848,14 @@ export async function generateWorksheetAI(
     )
 
     if (!options?.skipTaskRepairs) {
+      reportStage('check')
       for (let i = 0; i < blocks.length; i++) {
         const planBrief = planBriefs[i]
         const anchorTasks = collectAnchorTasks(blocks, planBriefs, {
           skipBlockIndex: i,
         })
         let attempts = 0
-        while (blockNeedsRepair(blocks[i], planBrief) && attempts < 3) {
+        while (blockNeedsRepair(blocks[i], planBrief) && attempts < 2 && !generationBudgetExceeded()) {
           try {
             blocks[i] = await generateSingleTaskAI(
               prepared,
@@ -859,7 +865,8 @@ export async function generateWorksheetAI(
               anchorTasks,
               plan[i]?.description,
             )
-          } catch {
+          } catch (err) {
+            if (err instanceof GenerationCancelled) throw err
             break
           }
           attempts += 1
@@ -936,7 +943,8 @@ export async function generateWorksheetAI(
     blocks = ensureWorksheetTaskBlocks(blocks, plan, prepared, refContent, planBriefs)
     blocks = repairWorksheetBlocksForDelivery(blocks, plan, prepared, refContent, planBriefs)
 
-    if (!options?.skipFinalSelfSufficiencyGate) {
+    reportStage('finalize')
+    if (!options?.skipFinalSelfSufficiencyGate && !generationBudgetExceeded()) {
       let finalIssues = collectWorksheetValidationIssues(blocks, planBriefs)
       if (finalIssues.length) {
         payload = await chatJson<WorksheetJsonTemplate & AiWorksheetPayload>(
