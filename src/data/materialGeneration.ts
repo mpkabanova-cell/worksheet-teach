@@ -121,7 +121,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
     title: title || draft.topic,
     intro: type === 'differentiated' ? '' : intro,
     taskPlan: sharedPlan,
-    blocks: allBlocks,
+    blocks: checked,
     groups,
     pages: 1,
     materialType: type,
