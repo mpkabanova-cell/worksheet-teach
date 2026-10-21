@@ -329,9 +329,10 @@ export function BlockCard({
                   </p>
                 )}
               </div>
-              {isEditing || (showDifficulty && (isAnswerBlock || block.difficulty)) ? (
+              {isEditing || (showDifficulty && block.difficulty) ? (
                 <div className="ws-task-meta">
                   <span className="diff-label">Сложность:</span>
+                  {isEditing && !block.difficulty ? <span className="diff-label">не указана</span> : null}
                   {isEditing ? (
                     <DifficultyPicker
                       value={block.difficulty}
@@ -528,7 +529,7 @@ function BlockTools({
           </button>
         ) : null}
         {!duplicateOnly && onRegenerateBlock ? (
-          <button type="button" className="block-tool-btn" onClick={onRegenerateBlock} aria-label="Перегенерировать">
+          <button type="button" className="block-tool-btn" onClick={onRegenerateBlock} aria-label="Заменить это задание" title="Заменить это задание">
             <FigmaIcon src={widgetRegenerate} size={16} />
           </button>
         ) : null}

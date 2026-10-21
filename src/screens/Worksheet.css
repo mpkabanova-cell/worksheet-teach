@@ -3534,7 +3534,7 @@
 @media print {
   .ws-group-tabs, .ws-audience-note, .ws-save-link { display: none !important; }
   .ws-sheet--cards .sheet-content { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-  .ws-sheet--cards .block-drop-zone { break-inside: avoid; border: 1px dashed #999; padding: 8px; }
+  .ws-sheet--cards .block-drop-zone { break-inside: avoid; border: 1px dashed var(--text-tertiary); padding: 8px; }
 }
 /* Действия задания доступны без наведения на сенсорных экранах */
 @media (hover: none) {
