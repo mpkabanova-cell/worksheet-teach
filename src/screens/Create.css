@@ -772,3 +772,12 @@
   }
 }
 
+.mode-fields { display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 12px; background: var(--bg-primary); }
+.mode-levels { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; }
+.mode-levels legend { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.mode-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.mode-hint { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.mode-hint--error { color: var(--text-danger); }
+@media (max-width: 640px) {
+  .mode-fields .row-2, .mode-fields .row-3, .create-main .row-3, .create-main .row-2 { grid-template-columns: 1fr !important; display: grid; }
+}
