@@ -315,13 +315,10 @@ export function Create({
                       if (found)
                         onChange((prev) => {
                           const next = { ...prev, materialType: found.type }
-                          // План пересоздаётся под число материалов нового режима.
-                          const count = taskCountForMode(next)
-                          return {
-                            ...next,
-                            taskCount: showTaskCountFor(found.type) ? next.taskCount : count,
-                            taskPlan: createPlan(showTaskCountFor(found.type) ? next.taskCount : count),
-                          }
+                          // План пересоздаётся под число заданий нового режима.
+                          const keepsCount = found.type === 'worksheet' || found.type === 'assessment'
+                          const count = keepsCount ? next.taskCount : taskCountForMode(next)
+                          return { ...next, taskCount: count, taskPlan: createPlan(count) }
                         })
                     }}
                   />
