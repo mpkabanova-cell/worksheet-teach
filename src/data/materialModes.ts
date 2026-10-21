@@ -57,10 +57,10 @@ export const DIFF_FORMAT_LABELS: Record<DiffFormat, string> = {
 }
 
 export const CARD_KIND_LABELS: Record<CardKind, string> = {
-  consolidate: 'Закрепление',
-  support: 'Нужна опора',
-  apply: 'Самостоятельное применение',
-  extra: 'Дополнительная задача',
+  consolidate: 'Отработка навыка',
+  support: 'Карточка с подсказкой',
+  apply: 'Применение без подсказок',
+  extra: 'Задание на перенос знаний',
 }
 
 /** Общая продуктовая логика из документа с промптами. */

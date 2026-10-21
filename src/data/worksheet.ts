@@ -227,8 +227,8 @@ export type MaterialType = 'worksheet' | 'assessment' | 'differentiated' | 'card
 
 export const MATERIAL_TYPES: { type: MaterialType; label: string }[] = [
   { type: 'worksheet', label: 'Рабочий лист' },
-  { type: 'assessment', label: 'Работа для проверки' },
-  { type: 'differentiated', label: 'Дифференцированные задания' },
+  { type: 'assessment', label: 'Проверочные и контрольные работы' },
+  { type: 'differentiated', label: 'Задания по уровням' },
   { type: 'cards', label: 'Карточки и раздаточные материалы' },
 ]
 
@@ -390,18 +390,18 @@ export const TASK_TYPE_META: {
   hint: string
   category: 'task' | 'element'
 }[] = [
-  { type: 'short_answer', label: 'Краткий ответ', hint: 'Факт, термин, вычисление', category: 'task' },
-  { type: 'single_choice', label: 'Один вариант ответа', hint: 'Выбор одного ответа', category: 'task' },
+  { type: 'short_answer', label: 'Задание с ответом', hint: 'Факт, термин, вычисление', category: 'task' },
+  { type: 'single_choice', label: 'Выбор одного ответа', hint: 'Один правильный вариант', category: 'task' },
   {
     type: 'multiple_choice',
-    label: 'Несколько вариантов',
-    hint: 'Выбор нескольких ответов',
+    label: 'Выбор нескольких ответов',
+    hint: 'Несколько правильных вариантов',
     category: 'task',
   },
   { type: 'fill_gaps', label: 'Заполнение пропусков', hint: 'Текст с пропусками', category: 'task' },
-  { type: 'matching', label: 'Сопоставление', hint: 'Соединить пары', category: 'task' },
-  { type: 'grouping', label: 'Группировка', hint: 'Классификация по признаку', category: 'task' },
-  { type: 'ordering', label: 'Упорядочивание', hint: 'Восстановить порядок', category: 'task' },
+  { type: 'matching', label: 'Установление соответствия', hint: 'Соединить пары', category: 'task' },
+  { type: 'grouping', label: 'Распределение по группам', hint: 'Классификация по признаку', category: 'task' },
+  { type: 'ordering', label: 'Установление последовательности', hint: 'Восстановить порядок', category: 'task' },
   {
     type: 'extended_answer',
     label: 'Развёрнутый ответ',
@@ -417,7 +417,7 @@ export const TASK_TYPE_META: {
 export const PLAN_TASK_TYPES = TASK_TYPE_META.filter((t) => t.category === 'task')
 
 export const DIFFICULTY_OPTIONS: { value: DifficultyMode; label: string }[] = [
-  { value: 'differentiated', label: 'Дифференцированная' },
+  { value: 'differentiated', label: 'Разные уровни' },
   { value: 'basic', label: 'Базовая' },
   { value: 'medium', label: 'Средняя' },
   { value: 'advanced', label: 'Повышенная' },
