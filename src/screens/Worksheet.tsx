@@ -126,6 +126,9 @@ interface WorksheetScreenProps {
   anotherCardBusy?: boolean
   activeGroupId?: string | null
   onGroupChange?: (id: string) => void
+  /** Полный черновик со всеми вариантами — для листа «Критерии и оценивание». */
+  gradingDraft?: WorksheetDraft
+  onChangeGradingDraft?: (draft: WorksheetDraft) => void
 }
 
 export function WorksheetScreen({
@@ -166,6 +169,8 @@ export function WorksheetScreen({
   anotherCardBusy,
   activeGroupId,
   onGroupChange,
+  gradingDraft,
+  onChangeGradingDraft,
 }: WorksheetScreenProps) {
   const selected = draft.blocks.find((b) => b.id === selectedBlockId) ?? null
   const isEdit = mode === 'edit' || mode === 'edit-widget' || mode === 'add-block'
@@ -556,7 +561,7 @@ export function WorksheetScreen({
               </div>
             ) : null}
             {showAnswers && draft.materialType === 'assessment' ? (
-              <GradingPanel draft={draft} onChangeDraft={onChangeDraft} />
+              <GradingPanel draft={gradingDraft ?? draft} onChangeDraft={onChangeGradingDraft ?? onChangeDraft} />
             ) : null}
           </div>
         </main>
