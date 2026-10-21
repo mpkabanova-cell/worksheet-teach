@@ -42,6 +42,12 @@ describe('materialModes', () => {
     expect(groupsForMode(d).map((g) => g.label)).toEqual(['Вариант 1', 'Вариант 2'])
   })
 
+  it('strips a solution line that only repeats the answer key', () => {
+    expect(stripDuplicateAnswer('3/7 + 2/7 = 5/7\nОтвет: 5/7', '5/7')).toBe('3/7 + 2/7 = 5/7')
+    expect(stripDuplicateAnswer('Решаем уравнение\nОтвет: x = 5', '5')).toBe('Решаем уравнение\nОтвет: x = 5')
+    expect(stripDuplicateAnswer(undefined, '5/7')).toBeUndefined()
+  })
+
   it('differentiated mode makes one tab per chosen level', () => {
     const d = emptyDraft()
     d.materialType = 'differentiated'
