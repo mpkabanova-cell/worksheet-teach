@@ -129,3 +129,101 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
     savedAt: undefined,
   }
 }
+
+/** Заменить блок новым, сохранив место, группу, уровень и баллы. */
+function keepSlot(prev: WorksheetBlock, fresh: WorksheetBlock): WorksheetBlock {
+  return {
+    ...fresh,
+    id: prev.id,
+    page: prev.page,
+    groupId: prev.groupId,
+    difficulty: prev.difficulty ?? fresh.difficulty,
+    points: prev.points ?? fresh.points,
+    skill: prev.skill ?? fresh.skill,
+  }
+}
+
+/**
+ * Если модель выдала описание из плана вместо условия — перегенерировать задание
+ * (до 2 попыток), иначе оставить пометку для учителя.
+ */
+async function repairPlanDescriptions(draft: WorksheetDraft, blocks: WorksheetBlock[]): Promise<WorksheetBlock[]> {
+  const out = [...blocks]
+  for (let i = 0; i < out.length; i++) {
+    const b = out[i]
+    if (b.type === 'page_break' || b.type === 'text') continue
+    if (!looksLikePlanDescription(blockTaskText(b))) continue
+    let fixed: WorksheetBlock | null = null
+    for (let attempt = 0; attempt < 2 && !fixed; attempt++) {
+      try {
+        const fresh = await generateSingleTaskAI(
+          { ...draft, blocks: out },
+          b.type,
+          b.skill ?? '',
+          'В прошлый раз вместо условия для ученика получилось описание задания из плана. Напиши готовое условие, которое ученик читает и выполняет, без слов «ученику нужно», «задание проверяет» и тому подобных.',
+        )
+        if (!looksLikePlanDescription(blockTaskText(fresh))) fixed = keepSlot(b, fresh)
+      } catch {
+        break
+      }
+    }
+    out[i] = fixed ?? { ...b, criteriaStatus: 'needs-review' as const }
+  }
+  return out
+}
+
+/**
+ * Равноценность вариантов: одинаковые условия на одной позиции перегенерируются
+ * (до 2 попыток на позицию); несовпадение типа или баллов помечается.
+ */
+async function repairVariantIssues(
+  draft: WorksheetDraft,
+  blocks: WorksheetBlock[],
+  groups: WorksheetDraft['groups'],
+): Promise<WorksheetBlock[]> {
+  let out = await repairPlanDescriptions(draft, blocks)
+  const gs = groups ?? []
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const issues = findVariantIssues(out, gs)
+    const duplicates = issues.filter((i) => i.kind === 'duplicate')
+    if (!duplicates.length) break
+    for (const issue of duplicates) {
+      // Перегенерируем задание во втором (и далее) варианте на этой позиции.
+      const variantBlocks = gs.map((g) =>
+        out.filter((b) => b.groupId === g.id && b.type !== 'page_break' && b.type !== 'text'),
+      )
+      const firstText = blockTaskText(variantBlocks[0]?.[issue.position] ?? ({} as WorksheetBlock))
+      for (const gid of issue.variantIds.slice(1)) {
+        const target = variantBlocks[gs.findIndex((g) => g.id === gid)]?.[issue.position]
+        if (!target) continue
+        try {
+          const fresh = await generateSingleTaskAI(
+            { ...draft, blocks: out },
+            target.type,
+            target.skill ?? '',
+            `Это вариант работы, позиция ${issue.position + 1}. Условие не должно совпадать с вариантом 1: «${firstText.slice(0, 300)}». То же умение, тип рассуждения и число шагов, но другие числа и сюжет.`,
+          )
+          const fixed = keepSlot(target, fresh)
+          if (target.points != null) fixed.points = target.points
+          out = out.map((b) => (b.id === target.id ? fixed : b))
+        } catch {
+          /* оставляем как есть */
+        }
+      }
+    }
+  }
+  // Оставшиеся несовпадения типов/баллов и дубли помечаем для ручной проверки.
+  const remaining = findVariantIssues(out, gs)
+  if (remaining.length) {
+    const marked = new Set<string>()
+    for (const issue of remaining) {
+      for (const gid of issue.variantIds) {
+        const vb = out.filter((b) => b.groupId === gid && b.type !== 'page_break' && b.type !== 'text')
+        const b = vb[issue.position]
+        if (b) marked.add(b.id)
+      }
+    }
+    out = out.map((b) => (marked.has(b.id) ? { ...b, criteriaStatus: 'needs-review' as const } : b))
+  }
+  return out
+}
