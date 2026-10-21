@@ -1,0 +1,85 @@
+import { useLayoutEffect, useRef, useState } from 'react'
+import { MathEditableInput } from '@/components/MathEditableInput'
+import { MathText } from '@/components/MathText'
+import { ANSWER_CELL_SIZE } from '@/data/blockUtils'
+import { AnswerGridOverlay, type GridOverlayType } from '@/components/block/AnswerGridOverlay'
+
+type CellsMode = 'empty' | 'edit' | 'readonly'
+
+/** +1px so outer grid lines (right/bottom) are not clipped at cell multiples. */
+function gridSizePx(cells: number): number {
+  return cells * ANSWER_CELL_SIZE + 1
+}
+
+export function AnswerCellsGrid({
+  rows,
+  mode,
+  value,
+  overlay,
+  onChange,
+}: {
+  rows: number
+  mode: CellsMode
+  value: string
+  overlay?: GridOverlayType
+  onChange?: (text: string) => void
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [cols, setCols] = useState(0)
+
+  useLayoutEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+
+    const update = () => {
+      const width = el.clientWidth
+      setCols(Math.max(1, Math.floor((width - 1) / ANSWER_CELL_SIZE)))
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const gridWidth = cols > 0 ? gridSizePx(cols) : undefined
+  const gridHeight = gridSizePx(rows)
+
+  return (
+    <div ref={wrapRef} className="answer-cells-wrap">
+      <div
+        className={`answer-cells-grid${mode === 'edit' ? ' answer-area-editable' : ''}${mode === 'readonly' ? ' answer-area-readonly' : ''}`}
+        style={{
+          width: gridWidth,
+          height: gridHeight,
+          ['--cell-size' as string]: `${ANSWER_CELL_SIZE}px`,
+          ['--cols' as string]: String(cols),
+          ['--rows' as string]: String(rows),
+        }}
+        aria-hidden={mode === 'empty' ? true : undefined}
+      >
+        {mode === 'edit' ? (
+          <MathEditableInput
+            className="answer-inline-input answer-inline-input--cells"
+            multiline
+            rows={rows}
+            value={value}
+            layout="cells"
+            showToolbar
+            floatingToolbar
+            onChange={(text) => onChange?.(text)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : null}
+        {mode === 'readonly' && value ? (
+          <div className="answer-inline-readonly answer-inline-readonly--cells">
+            <MathText text={value} as="div" layout="cells" />
+          </div>
+        ) : null}
+        {overlay && cols > 0 ? (
+          <AnswerGridOverlay type={overlay} cols={cols} rows={rows} />
+        ) : null}
+      </div>
+    </div>
+  )
+}
