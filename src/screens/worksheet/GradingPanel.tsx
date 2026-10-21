@@ -46,8 +46,9 @@ export function GradingPanel({
             <tr key={b.id} className={openId === b.id ? 'is-open' : ''}>
               <td>{i + 1}</td>
               <td>
-                <button type="button" className="grading-skill" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
-                  {b.skill || b.title || 'Задание'}
+                <span className="grading-skill-name">{b.skill || b.title || 'Задание'}</span>
+                <button type="button" className="grading-expand" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
+                  {openId === b.id ? 'Скрыть решение и критерии ▴' : 'Решение и критерии ▾'}
                 </button>
                 {b.criteriaStatus === 'needs-review' ? (
                   <span className="grading-flag" role="note">Проверьте ключ и критерии</span>
