@@ -58,7 +58,8 @@ describe('ensureWorksheetTaskBlocks', () => {
     )
 
     expect(result).toHaveLength(2)
-    expect(result[1].type).toBe('fill_gaps')
+    // числовые пропуски запрещены — задание становится кратким ответом, а не пустышкой
+    expect(['fill_gaps', 'short_answer']).toContain(result[1].type)
     expect(countWorksheetTaskBlocks(result)).toBe(2)
   })
 
