@@ -443,11 +443,12 @@ export function sanitizeBlock(block: WorksheetBlock): WorksheetBlock {
       : rawGapsText
         ? migrateGapsTextToSource(rawGapsText, sanitized.gapsAnswers ?? [])
         : ''
-    if (fillGapsContainsMath(rawGapsText || rawSource || '', sanitized.gapsAnswers ?? [])) {
+    const originalText = (asText(sanitized.gapsText) ?? '').trim() || rawSource || ''
+    if (fillGapsContainsMath(originalText, sanitized.gapsAnswers ?? [])) {
       return resolveBlockQuestion(rejectInvalidFillGapsBlock({
         ...sanitized,
-        gapsSourceText: rawSource,
-        gapsText: rawGapsText || rawSource,
+        gapsSourceText: originalText,
+        gapsText: originalText,
       }))
     }
     const source = sanitizeGapsSourceText(rawSource)
