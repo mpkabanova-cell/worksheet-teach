@@ -198,7 +198,7 @@ export function Modals({
             <Icon name="gear" /> Настройки
           </button>
           <button type="button" onClick={() => onOpen('regenerate')}>
-            <Icon name="refresh" /> Перегенерировать весь материал
+            <Icon name="refresh" /> Создать заново
           </button>
           <button type="button" onClick={() => onOpen('duplicate')}>
             <Icon name="copy" /> Дублировать
