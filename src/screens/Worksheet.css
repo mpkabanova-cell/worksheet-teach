@@ -3505,3 +3505,38 @@
     padding: 2px 6px;
   }
 }
+
+/* --- Материалы: сохранение, вкладки, аудитория, карточки --- */
+.ws-navbar-left { flex-direction: row; align-items: baseline; flex-wrap: wrap; column-gap: 12px; }
+.ws-navbar-left .breadcrumbs { flex-basis: 100%; }
+.ws-save-link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 12px; line-height: 16px; color: var(--text-brand);
+}
+.ws-save-link:hover { text-decoration: underline; }
+.ws-save-link:focus-visible, .ws-group-tabs button:focus-visible { outline: 2px solid var(--border-brand); outline-offset: 2px; }
+.ws-group-tabs {
+  display: flex; gap: 4px; padding: 8px 24px 0; overflow-x: auto;
+}
+.ws-group-tabs button {
+  border: 1px solid var(--border-secondary); background: var(--bg-white); color: var(--text-secondary);
+  border-radius: 10px; padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap;
+}
+.ws-group-tabs button.active { background: var(--bg-brand-soft); color: var(--text-brand); border-color: var(--border-brand); }
+.ws-audience-note {
+  margin: 8px 24px 0; align-self: flex-start; font-size: 13px; color: var(--text-secondary);
+  background: var(--bg-secondary); border-radius: 8px; padding: 4px 10px; width: fit-content;
+}
+.ws-audience-note.teacher { color: var(--text-brand); background: var(--bg-brand-soft); }
+.ws-sheet--cards .block-drop-zone > * {
+  border: 1.5px dashed var(--border-secondary); border-radius: 12px;
+}
+@media print {
+  .ws-group-tabs, .ws-audience-note, .ws-save-link { display: none !important; }
+  .ws-sheet--cards .sheet-content { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .ws-sheet--cards .block-drop-zone { break-inside: avoid; border: 1px dashed #999; padding: 8px; }
+}
+/* Действия задания доступны без наведения на сенсорных экранах */
+@media (hover: none) {
+  .ws-task-wrap .block-tools, .ws-task-wrap [class*="widget"] { opacity: 1 !important; visibility: visible !important; }
+}
