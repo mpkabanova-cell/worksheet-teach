@@ -22,6 +22,7 @@ import {
 import { getBlockQuestion } from '@/data/taskContent'
 import { stripDuplicateAnswer } from '@/data/materialModes'
 import { changeTaskPoints, ensureCriteriaLevels } from '@/data/assessmentCriteria'
+import { CriteriaLevelsEditor } from './CriteriaLevelsEditor'
 import { CriteriaLevelsView } from '@/components/CriteriaLevelsView'
 import { MathText } from '@/components/MathText'
 import { WysiwygTextarea } from '@/components/WysiwygTextarea'
@@ -501,6 +502,9 @@ export function BlockCard({
               <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
             ) : null}
           </div>
+        ) : null}
+        {isEditing && block.points != null ? (
+          <CriteriaLevelsEditor block={block} onPatch={patchBlock} />
         ) : null}
       </article>
     </div>
