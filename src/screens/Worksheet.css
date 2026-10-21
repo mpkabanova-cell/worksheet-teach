@@ -3570,7 +3570,7 @@
 .ws-teacher-key { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--text-brand); background: var(--bg-brand-soft); border-radius: 8px; padding: 8px 12px; }
 .ws-material-tabs { display: flex; align-items: center; gap: 8px; padding: 8px 24px; overflow-x: auto; }
 .ws-material-tabs button { white-space: nowrap; }
-.ws-task-head:has(.ws-task-points) { display: grid; grid-template-columns: 32px minmax(0, 1fr) 88px; column-gap: 8px; }
+.ws-task-head:has(.ws-task-points) { display: grid; grid-template-columns: 32px minmax(0, 1fr) 88px; column-gap: 8px; padding-right: 0; }
 .ws-task-points { justify-self: end; align-self: start; width: 88px; height: 28px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--border-secondary); border-radius: 8px; }
 .ws-task-points-editor { display: flex; align-items: center; gap: 3px; }
 .ws-task-points-editor input { width: 36px; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; }
