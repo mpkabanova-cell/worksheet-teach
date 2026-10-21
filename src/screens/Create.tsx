@@ -312,7 +312,17 @@ export function Create({
                     value={MATERIAL_TYPES.find((m) => m.type === materialType)?.label}
                     onChange={(e) => {
                       const found = MATERIAL_TYPES.find((m) => m.label === e.target.value)
-                      if (found) onChange((prev) => ({ ...prev, materialType: found.type }))
+                      if (found)
+                        onChange((prev) => {
+                          const next = { ...prev, materialType: found.type }
+                          // План пересоздаётся под число материалов нового режима.
+                          const count = taskCountForMode(next)
+                          return {
+                            ...next,
+                            taskCount: showTaskCountFor(found.type) ? next.taskCount : count,
+                            taskPlan: createPlan(showTaskCountFor(found.type) ? next.taskCount : count),
+                          }
+                        })
                     }}
                   />
                 </Field>
@@ -326,10 +336,10 @@ export function Create({
                     onChange={(e) => onChange({ ...draft, subject: e.target.value })}
                   />
                 </Field>
-                <Field label="Параллель" required>
+                <Field label="Класс" required>
                   <Select
                     options={GRADES}
-                    placeholder="Выберите параллель"
+                    placeholder="Выберите класс"
                     value={draft.grade}
                     onChange={(e) => onChange({ ...draft, grade: e.target.value })}
                   />
