@@ -47,6 +47,8 @@ export async function exportWorksheetDocxBlob(
 
   const doc = new Document({
     styles: {
+      paragraphStyles: [{ id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { font: runFont(), color: '161A33', bold: true, size: 28 }, paragraph: { outlineLevel: 0 } }],
       default: {
         document: {
           run: {

@@ -367,11 +367,19 @@ export async function rasterizeTaskBlockForPdf(
     }
   }
   if (showAnswer) {
+    const key = document.createElement('div')
+    key.style.background = `#${COLORS.bgBrandSoft}`
+    key.style.padding = '12px'
+    key.style.borderRadius = '8px'
+    key.style.display = 'flex'
+    key.style.flexDirection = 'column'
+    key.style.gap = '4px'
     for (const line of teacherDetailLines(block)) {
       const detail = document.createElement('div')
       appendMathText(detail, line, { fontSize: TYPO.plainBody.sizePx, lineHeight: TYPO.plainBody.linePx })
-      root.appendChild(detail)
+      key.appendChild(detail)
     }
+    if (key.childNodes.length) root.appendChild(key)
   }
 
   return captureDomToPng(root, `pdf-task-${block.id}-${showAnswer ? 'a' : 's'}`, ctx, beforeCapture, {
