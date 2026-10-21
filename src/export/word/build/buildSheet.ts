@@ -2,6 +2,7 @@ import type { WorksheetBlock } from '@/data/worksheet'
 import { countTaskBlocksBefore } from '@/data/blockUtils'
 import { buildAnswersTitle, buildHeader, buildPageFooter } from '@/export/word/build/buildHeader'
 import { buildBlockContent } from '@/export/word/build/buildBlock'
+import { buildCriteriaSheet, hasCriteriaSheet } from '@/export/word/build/buildCriteriaSheet'
 import type { ExportContext } from '@/export/word/types'
 import { PageBreak, Paragraph, type FileChild } from 'docx'
 
@@ -21,13 +22,18 @@ async function buildPageBlocks(
   for (let index = 0; index < pageBlocks.length; index += 1) {
     const block = pageBlocks[index]
     const taskNumber = isNumberedTask(block)
-      ? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1
+      ? (block.exportNumber ?? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1)
       : null
     result.push(...(await buildBlockContent(block, taskNumber, ctx, showAnswerOverride)))
   }
 
   if (totalPages > 1) {
     result.push(buildPageFooter(page))
+  }
+
+  if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
+    result.push(new Paragraph({ children: [new PageBreak()] }))
+    result.push(...buildCriteriaSheet(ctx.draft))
   }
 
   return result
@@ -49,6 +55,11 @@ export async function buildSheetBody(
     result.push(...(await buildPageBlocks(page, totalPages, ctx, showAnswerOverride)))
   }
 
+  if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
+    result.push(new Paragraph({ children: [new PageBreak()] }))
+    result.push(...buildCriteriaSheet(ctx.draft))
+  }
+
   return result
 }
 
@@ -65,6 +76,11 @@ export async function buildWorksheetDocumentChildren(ctx: ExportContext): Promis
     result.push(new Paragraph({ children: [new PageBreak()] }))
     result.push(buildAnswersTitle())
     result.push(...(await buildSheetBody({ ...ctx, options: { ...ctx.options, showAnswers: true } }, true)))
+  }
+
+  if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
+    result.push(new Paragraph({ children: [new PageBreak()] }))
+    result.push(...buildCriteriaSheet(ctx.draft))
   }
 
   return result

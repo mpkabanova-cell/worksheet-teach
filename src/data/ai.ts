@@ -1,3 +1,4 @@
+import { formatCriteriaLevels } from './assessmentCriteria'
 import type { PlanTask, TaskType, WorksheetBlock, WorksheetDraft } from './worksheet'
 import { GenerationCancelled, generationBudgetExceeded, reportStage } from './generationControl'
 import { uid } from './worksheet'
@@ -98,6 +99,10 @@ export interface AiTaskPayload {
   groups?: { title: string; items: string[] }[]
   order_items?: string[]
   difficulty?: 1 | 2 | 3
+  skill?: string
+  solution?: string
+  max_points?: number | null
+  criteria_levels?: { points: number; description: string }[]
 }
 
 interface AiWorksheetPayload {
@@ -483,6 +488,23 @@ export function repairWorksheetBlocksForDelivery(
   return result
 }
 
+function modelGradingFields(task: AiTaskPayload): Partial<WorksheetBlock> {
+  const out: Partial<WorksheetBlock> = {}
+  if (task.skill?.trim()) out.skill = sanitizeAiText(task.skill.trim())
+  if (task.solution?.trim()) out.solution = sanitizeAiText(task.solution.trim())
+  const max = Number(task.max_points)
+  if (Number.isFinite(max) && max >= 1 && max <= 20) out.points = Math.round(max)
+  const levels = Array.isArray(task.criteria_levels)
+    ? task.criteria_levels.filter((l) => l && Number.isFinite(Number(l.points)) && String(l.description ?? '').trim())
+    : []
+  if (levels.length) {
+    out.criteria = formatCriteriaLevels(
+      levels.map((l) => ({ points: Math.round(Number(l.points)), description: sanitizeAiText(String(l.description)) })),
+    )
+  }
+  return out
+}
+
 function toBlock(
   task: AiTaskPayload,
   index: number,
@@ -575,6 +597,7 @@ function toBlock(
         ? createDefaultGroupingTableFields()
         : {}),
     orderItems: task.order_items?.map(sanitizeAiText),
+    ...modelGradingFields(task),
     difficulty:
       task.difficulty ??
       planDifficultyToStars(planItem?.difficulty, draft.difficulty, index, draft.taskCount),

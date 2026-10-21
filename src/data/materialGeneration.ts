@@ -1,3 +1,4 @@
+import { ensureCriteriaLevels } from './assessmentCriteria'
 import { generateSingleTaskAI, generateWorksheetAI, type GenerateMode } from './ai'
 import { blockTaskText, findVariantIssues, looksLikePlanDescription } from './contentChecks'
 import { verifiedAnswer } from './fractionCheck'
@@ -47,7 +48,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
       modeParams: params,
       groups: [],
       blocks: verifyBlockAnswers(result.blocks)
-        .map((b) => (points && !b.points ? { ...b, points: b.difficulty ?? 1 } : b))
+        .map((b) => (points ? ensureCriteriaLevels(b.points ? b : { ...b, points: b.difficulty ?? 1 }) : b))
         .map(cardTitle),
     }
   }
@@ -107,7 +108,8 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           groupId: g.id,
           difficulty: stars ?? b.difficulty,
           points: points ? (b.points ?? b.difficulty ?? 1) : b.points,
-        })),
+        }))
+        .map((b) => (points ? ensureCriteriaLevels(b) : b)),
     )
   }
 

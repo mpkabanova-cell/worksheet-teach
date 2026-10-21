@@ -45,7 +45,7 @@ async function collectPageBlockSlices(
     }
 
     const taskNumber = isNumberedTask(block)
-      ? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1
+      ? (block.exportNumber ?? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1)
       : null
     const image = await rasterizeTaskBlockForPdf(block, taskNumber, ctx, showAnswer)
     slices.push({ kind: 'image', image, gapAfterPx: LAYOUT.taskGap })

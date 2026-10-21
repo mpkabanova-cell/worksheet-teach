@@ -807,6 +807,8 @@ export default function App() {
         <ErrorBoundary onReset={() => setScreen('edit')}>
           <WorksheetScreen
           draft={viewDraft}
+          gradingDraft={draft}
+          onChangeGradingDraft={(next) => setDraft(next)}
           groupTabs={draft.groups}
           activeGroupId={activeGroup}
           onGroupChange={(id) => {
