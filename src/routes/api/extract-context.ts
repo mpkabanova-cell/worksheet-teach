@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/extract-context")({
           if (file.size > MAX_UPLOAD_BYTES)
             return json(413, { error: "TOO_LARGE", message: "Файл больше 10 МБ" });
           const buffer = new Uint8Array(await file.arrayBuffer());
-          const result = await extractContextFromFile(buffer, file.name, file.type);
+          const result = await extractContextFromFile(buffer as unknown as Buffer, file.name, file.type);
           return json(200, result);
         } catch (err) {
           if (err instanceof ContextExtractError) {
