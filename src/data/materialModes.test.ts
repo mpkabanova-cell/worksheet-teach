@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftForExport, exportAnswerOptions, groupsForMode, replaceBlockKeepingSlot } from './materialModes'
+import { draftForExport, exportAnswerOptions, groupsForMode, replaceBlockKeepingSlot, stripDuplicateAnswer } from './materialModes'
 import { emptyDraft, type WorksheetBlock } from './worksheet'
 
 const block = (id: string, extra: Partial<WorksheetBlock> = {}): WorksheetBlock => ({
