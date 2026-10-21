@@ -83,7 +83,9 @@ export function Create({
   const showTaskCount = materialType === 'worksheet' || materialType === 'assessment'
 
   const canSubmit = useMemo(
-    () => Boolean(draft.subject && draft.grade && draft.topic.trim()),
+    () =>
+      Boolean(draft.subject && draft.grade && draft.topic.trim()) &&
+      !(materialTypeOf(draft) === 'differentiated' && modeParamsOf(draft).differentiated.levels.length === 0),
     [draft],
   )
 

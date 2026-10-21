@@ -16,7 +16,7 @@ const MAIN_TABS = ['Подготовка к уроку', 'Проведение �
 const MATERIAL_CARDS = [
   { title: 'Задание', img: cardTask },
   { title: 'Презентация', img: cardPlan },
-  { title: 'Рабочий лист', img: cardWorksheet, action: 'worksheet' as const },
+  { title: 'Рабочие листы и работы', img: cardWorksheet, action: 'worksheet' as const },
   { title: 'Мотивирующее задание', img: cardTest },
 ]
 
