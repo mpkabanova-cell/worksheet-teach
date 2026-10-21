@@ -359,7 +359,7 @@ export async function rasterizeTaskBlockForPdf(
     root.appendChild(slot)
   }
   if (block.type === 'answer_field') {
-    appendMathText(root, block.mediaFileName || block.mediaUrl || 'Медиафайл', TYPO.plainBody)
+    appendMathText(root, block.mediaFileName || block.mediaUrl || 'Медиафайл', { fontSize: TYPO.plainBody.sizePx, lineHeight: TYPO.plainBody.linePx })
     if (block.mediaUrl) {
       const bytes = await fetchImageBytes(qrCodeUrl(block.mediaUrl, LAYOUT.qrSize), ctx)
       if (bytes) await appendMarkerImg(root, bytes, LAYOUT.qrSize)
