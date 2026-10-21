@@ -145,6 +145,15 @@ export interface WorksheetBlock {
   difficulty?: 1 | 2 | 3
   /** Задание выдано ученику — блок только для чтения. */
   issued?: boolean
+  /** Вариант / комплект уровня / карточка, к которой относится блок. */
+  groupId?: string
+  /** Проверяемое умение. */
+  skill?: string
+  /** Решение (только учительская версия). */
+  solution?: string
+  /** Баллы и критерии (только учительская версия). */
+  points?: number
+  criteria?: string
 }
 
 export interface PlanTask {
@@ -159,10 +168,68 @@ export interface PlanTask {
   difficulty?: PlanItemDifficulty | null
 }
 
+export type PrintAudience = 'student' | 'teacher'
+
 export interface PrintSettings {
   answersSeparate: boolean
   copies: number
   orientation: 'portrait' | 'landscape'
+  /** Для ученика — без ответов; для учителя — с ответами. */
+  audience?: PrintAudience
+  /** Какой вариант / комплект выгружать: 'all' или id группы. */
+  groupFilter?: string
+}
+
+export type MaterialType = 'worksheet' | 'assessment' | 'differentiated' | 'cards'
+
+export const MATERIAL_TYPES: { type: MaterialType; label: string }[] = [
+  { type: 'worksheet', label: 'Рабочий лист' },
+  { type: 'assessment', label: 'Работа для проверки' },
+  { type: 'differentiated', label: 'Дифференцированные задания' },
+  { type: 'cards', label: 'Карточки и раздаточные материалы' },
+]
+
+export type AssessmentKind = 'independent' | 'check' | 'control'
+export type DiffLevel = 'basic' | 'advanced' | 'high'
+export type CardFormat = 'task' | 'memo' | 'handout'
+
+export interface ModeParams {
+  assessment: {
+    kind: AssessmentKind
+    minutes: number
+    variants: number
+    skills: string
+    grading: 'none' | 'points'
+  }
+  differentiated: {
+    levels: DiffLevel[]
+    perLevel: number
+    skill: string
+    delivery: 'shared' | 'sets'
+    printLevelNames: boolean
+  }
+  cards: {
+    format: CardFormat
+    purpose: 'practice' | 'error' | 'apply' | 'support'
+    count: number
+    perPage: 'auto' | '2' | '4'
+    work: 'individual' | 'pair' | 'group'
+  }
+}
+
+export function defaultModeParams(): ModeParams {
+  return {
+    assessment: { kind: 'independent', minutes: 20, variants: 2, skills: '', grading: 'none' },
+    differentiated: { levels: ['basic', 'advanced', 'high'], perLevel: 2, skill: '', delivery: 'sets', printLevelNames: false },
+    cards: { format: 'task', purpose: 'practice', count: 4, perPage: 'auto', work: 'individual' },
+  }
+}
+
+/** Вариант работы или комплект уровня — вкладка над листом. */
+export interface BlockGroup {
+  id: string
+  label: string
+  kind: 'variant' | 'level' | 'card'
 }
 
 export interface WorksheetDraft {
@@ -190,6 +257,10 @@ export interface WorksheetDraft {
   /** Snapshot globals + task_plan после генерации плана или листа. */
   generationBaseline?: GenerationBaseline | null
   savedAt?: string
+  materialType?: MaterialType
+  modeParams?: ModeParams
+  /** Варианты / уровни / карточки. Пусто — обычный лист. */
+  groups?: BlockGroup[]
 }
 
 export const SUBJECTS = [
