@@ -346,6 +346,11 @@ export function BlockCard({
                 </div>
               ) : null}
             </div>
+            {!isEditing && block.points != null && block.points > 0 ? (
+              <span className="ws-task-points" title="Максимум баллов за задание">
+                {pointsLabel(block.points)}
+              </span>
+            ) : null}
           </div>
         ) : (
           <div className="ws-task-main plain-body">
