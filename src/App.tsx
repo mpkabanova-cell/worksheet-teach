@@ -4,6 +4,8 @@ import { Sidebar } from '@/components/Sidebar'
 import { generateSingleTaskAI } from '@/data/ai'
 import { generateMaterialAI, verifyBlockAnswers } from '@/data/materialGeneration'
 import { GenerationCancelled, runGeneration, type GenerationStage } from '@/data/generationControl'
+
+const GEN_STAGE_ORDER: GenerationStage[] = ['plan', 'tasks', 'check', 'finalize']
 import { anotherCardNote, CARD_KIND_LABELS, stripCardHeading, draftForExport, materialTypeOf, modeParamsOf, replaceBlockKeepingSlot } from '@/data/materialModes'
 import type { GenerateMode } from '@/data/ai'
 import {
