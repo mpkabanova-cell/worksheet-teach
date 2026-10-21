@@ -484,12 +484,12 @@ function rejectInvalidFillGapsBlock(block: WorksheetBlock): WorksheetBlock {
   const rawText = (block.gapsText?.trim() || source).replace(/\\?_{3,}|\\_(\\_)+/g, '…')
 
   if (answers.length > 0 && fillGapsContainsMath(rawText, answers)) {
-    // Формулу с пропуском превращаем в задание с кратким ответом — формула остаётся целой.
-    const body = rawText.trim()
+    // Формулу с пропуском превращаем в задание с кратким ответом — формула остаётся целой,
+    // а формулировка переписывается под краткий ответ без «…».
     return {
       ...block,
       type: 'short_answer',
-      question: body && body !== question ? `${question}\n${body}` : question,
+      question: rewriteGapsAsShortAnswer(question, rawText.trim()),
       correctAnswers: [answers.join('; ')],
       gapsSourceText: undefined,
       gapsText: undefined,
@@ -1603,4 +1603,51 @@ export function hasValidChoiceCorrectAnswers(block: WorksheetBlock): boolean {
     return (block.correctOptionIds?.length ?? 0) >= 1
   }
   return true
+}
+
+const GAP_INSTRUCTION_RE =
+  /^\s*(заполни(те)?|вставь(те)?|впиши(те)?|восстанови(те)?|допиши(те)?)\s+(пропуск\w*|пропущенн\w*)[^.!?\n]*[.!?]?\s*/i
+const GAP_MARK = /…|\.{3,}|_{2,}/
+
+function lowerFirst(s: string): string {
+  return s ? s.charAt(0).toLowerCase() + s.slice(1) : s
+}
+
+/** Переписывает одно предложение с пропуском в нормальное задание с кратким ответом. */
+function rewriteGapSentence(sentence: string): string {
+  const s = sentence.trim().replace(/[.!?]+$/, '')
+  // Пропуск внутри формулы «$... = …$» — убираем «= …», оставляем выражение.
+  const mathEq = s.replace(/\s*=\s*(?:…|\.{3,}|_{2,})[^$]*\$/g, '$')
+  if (mathEq !== s && !GAP_MARK.test(mathEq.replace(/\$[^$]*\$/g, ''))) return `${mathEq}.`
+  const m = s.match(
+    /^(.*?)\s+(равен|равна|равно|равны|составляет|составляют|записывается как|можно записать как|будет|получится|равняется)\s+(?:…|\.{3,}|_{2,})/i,
+  )
+  if (m) {
+    const subject = m[1].trim()
+    const verb = m[2].toLowerCase()
+    if (/записывается|записать/.test(verb)) return `Запишите ${lowerFirst(subject)} в виде одного выражения.`
+    return `Найдите ${lowerFirst(subject)}.`
+  }
+  const cleaned = s.replace(/\s*(?:…|\.{3,}|_{2,})\S*/g, '').trim()
+  return cleaned ? `Найдите: ${lowerFirst(cleaned)}.` : ''
+}
+
+/** Формулировка short_answer вместо «Заполните пропуски…»: без искусственных пропусков. */
+export function rewriteGapsAsShortAnswer(question: string, body: string): string {
+  const intro = question.replace(GAP_INSTRUCTION_RE, '').trim()
+  const text = body && body !== question ? body : intro === question ? '' : ''
+  const source = text || (GAP_MARK.test(question) ? question : '')
+  const sentences = (source.match(/[^.!?\n]*?(?:\$[^$]*\$[^.!?\n$]*?)*[^.!?\n]*(?:[.!?]+|$)/g) ?? [])
+    .map((x) => x.trim())
+    .filter(Boolean)
+  const out: string[] = []
+  for (const sentence of sentences) {
+    if (GAP_MARK.test(sentence.replace(/\$[^$]*\$/g, (f) => (GAP_MARK.test(f) ? '…' : '')))) {
+      const r = rewriteGapSentence(sentence)
+      if (r) out.push(r)
+    } else out.push(sentence)
+  }
+  const head = source === question ? '' : intro
+  const lines = [head, ...out].filter(Boolean)
+  return lines.join('\n') || question
 }
