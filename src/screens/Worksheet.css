@@ -3596,3 +3596,7 @@
 .grading-variant { font-size: 15px; font-weight: 600; margin: 16px 0 8px; }
 .grading-section + .grading-section { margin-top: 12px; }
 
+.ws-criteria-editor-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: start; }
+.ws-criteria-editor-row span { padding-top: 6px; font-weight: 600; }
+.ws-criteria-editor-row textarea { width: 100%; resize: vertical; font: inherit; color: var(--text-primary); background: var(--bg-primary, transparent); border: 1px solid var(--border-secondary); border-radius: 6px; padding: 4px 8px; }
+@media (max-width: 520px) { .ws-criteria-editor-row { grid-template-columns: 1fr; } }
