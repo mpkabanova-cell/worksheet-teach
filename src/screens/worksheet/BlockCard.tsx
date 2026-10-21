@@ -402,7 +402,9 @@ export function BlockCard({
           <div className="ws-teacher-key" aria-label="Для учителя">
             {block.points ? <span>Баллы: {block.points}</span> : null}
             {block.criteria ? <span>Критерии: {block.criteria}</span> : null}
-            {block.solution ? <MathText text={`Решение: ${block.solution}`} as="span" /> : null}
+            {block.solution ? (
+              <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
+            ) : null}
           </div>
         ) : null}
 
