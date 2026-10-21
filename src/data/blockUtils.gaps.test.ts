@@ -129,7 +129,7 @@ describe('gapsText migration', () => {
 })
 
 describe('sanitizeBlock fill_gaps', () => {
-  it('converts invalid fill_gaps to text', () => {
+  it('converts fill_gaps with a formula to short answer', () => {
     const block: WorksheetBlock = {
       id: 'b5',
       type: 'fill_gaps',
@@ -142,8 +142,9 @@ describe('sanitizeBlock fill_gaps', () => {
     }
 
     const sanitized = sanitizeBlock(block)
-    expect(sanitized.type).toBe('text')
+    expect(sanitized.type).toBe('short_answer')
     expect(sanitized.gapsAnswers).toBeUndefined()
-    expect(sanitized.body).toContain('(a+b)^2')
+    expect(sanitized.question).toContain('(a+b)^2')
+    expect(sanitized.correctAnswers).toEqual(['2ab'])
   })
 })
