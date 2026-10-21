@@ -101,3 +101,4 @@
 .loader-btn { border: 1px solid var(--border-secondary); background: var(--bg-white); color: var(--text-default); border-radius: 12px; padding: 10px 18px; font: inherit; cursor: pointer; }
 .loader-btn--brand { background: var(--bg-brand); border-color: var(--border-brand); color: var(--text-inverse); }
 .loader-btn:focus-visible { outline: 2px solid var(--border-brand); outline-offset: 2px; }
+.loader-center { flex-direction: column; }
