@@ -484,12 +484,12 @@ function rejectInvalidFillGapsBlock(block: WorksheetBlock): WorksheetBlock {
   const rawText = (block.gapsText?.trim() || source).replace(/\\?_{3,}|\\_(\\_)+/g, '…')
 
   if (answers.length > 0 && fillGapsContainsMath(rawText, answers)) {
-    // Формулу с пропуском превращаем в задание с кратким ответом — формула остаётся целой.
-    const body = rawText.trim()
+    // Формулу с пропуском превращаем в задание с кратким ответом — формула остаётся целой,
+    // а формулировка переписывается под краткий ответ без «…».
     return {
       ...block,
       type: 'short_answer',
-      question: body && body !== question ? `${question}\n${body}` : question,
+      question: rewriteGapsAsShortAnswer(question, rawText.trim()),
       correctAnswers: [answers.join('; ')],
       gapsSourceText: undefined,
       gapsText: undefined,
