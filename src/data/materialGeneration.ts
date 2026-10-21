@@ -35,7 +35,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           ? { ...draft, showIntro: false }
           : draft
     const result = await generateWorksheetAI(base, mode)
-    const points = type === 'assessment' && params.assessment.grading === 'points'
+    const points = type === 'assessment' && params.assessment.grading !== 'none'
     let cardN = 0
     const cardTitle = (b: WorksheetBlock): WorksheetBlock =>
       type === 'cards' && b.type !== 'page_break' && b.type !== 'text'
@@ -97,7 +97,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
       intro = result.intro
     }
     const stars = type === 'differentiated' ? levelToStars(g.id.replace('level-', '') as DiffLevel) : undefined
-    const points = type === 'assessment' && params.assessment.grading === 'points'
+    const points = type === 'assessment' && params.assessment.grading !== 'none'
     allBlocks.push(
       ...verifyBlockAnswers(result.blocks)
         .filter((b) => b.type !== 'page_break')
