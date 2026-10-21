@@ -3541,3 +3541,6 @@
   .ws-task-wrap .block-tools, .ws-task-wrap [class*="widget"] { opacity: 1 !important; visibility: visible !important; }
 }
 .ws-teacher-key { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--text-brand); background: var(--bg-brand-soft); border-radius: 8px; padding: 8px 12px; }
+.ws-navbar-left { flex: 1 1 auto; }
+@media (min-width: 900px) { .ws-actions { flex-wrap: nowrap; flex-shrink: 0; } }
+@media (max-width: 899px) { .ws-navbar { height: auto; flex-wrap: wrap; row-gap: 8px; } }
