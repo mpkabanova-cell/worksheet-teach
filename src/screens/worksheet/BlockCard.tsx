@@ -1,6 +1,6 @@
 import type { DragEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { BlockPreviewState, WorksheetBlock } from '@/data/worksheet'
+import { pointsLabel, type BlockPreviewState, type WorksheetBlock } from '@/data/worksheet'
 import {
   clampText,
   getBlockAnswerStyle,
