@@ -45,8 +45,14 @@ function demoDraft(): WorksheetDraft {
   })
 }
 
-const PENDING_KEY = 'ws-pending-generation'
-const AUTOSAVE_KEY = 'ws-autosave-draft'
+import {
+  clearAutosave,
+  clearPending,
+  rememberTabDraft,
+  restoreForTab,
+  saveAutosave,
+  savePending,
+} from '@/data/draftPersistence'
 
 const SHELL_SCREENS: Screen[] = ['home', 'worksheets-list', 'coming-soon']
 
