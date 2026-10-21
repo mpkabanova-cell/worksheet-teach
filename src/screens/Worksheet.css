@@ -3578,6 +3578,13 @@
 .criteria-levels { display: grid; gap: 4px; }
 @media print { .ws-material-tabs { display: none !important; } }
 .grading-skill-name { font-weight: 500; }
+.grading-table { table-layout: fixed; }
+.grading-table th:first-child { width: 32px; }
+.grading-table th:last-child { width: 64px; }
+.grading-table th:nth-child(3) { width: 32%; }
+.grading-table td { overflow-wrap: anywhere; }
+.grading-answer { white-space: pre-line; }
+.grading-skill-name { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
 .grading-expand { display: block; background: none; border: none; padding: 0; margin-top: 2px; font-size: 12px; color: var(--text-brand); cursor: pointer; }
 .ws-navbar-left { flex: 1 1 auto; }
 @media (min-width: 900px) { .ws-actions { flex-wrap: nowrap; flex-shrink: 0; } }

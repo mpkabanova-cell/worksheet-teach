@@ -57,7 +57,7 @@ export function criteriaCoversAllLevels(text: string | undefined, max: number): 
   const levels = parseCriteriaLevels(text)
   if (max < 1) return false
   const seen = new Set(levels.map((l) => l.points))
-  if (levels.some((l) => l.points > max)) return false
+  if (levels.length !== max + 1 || levels.some((l) => l.points > max)) return false
   for (let p = 0; p <= max; p++) if (!seen.has(p)) return false
   return true
 }
@@ -106,15 +106,25 @@ export function defaultCriteriaLevels(type: WorksheetBlock['type'], max: number)
 export function ensureCriteriaLevels(block: WorksheetBlock): WorksheetBlock {
   if (block.type === 'page_break' || block.type === 'text' || block.type === 'answer_field') return block
   const max = Math.max(1, Math.round(block.points ?? 1))
-  if (criteriaCoversAllLevels(block.criteria, max)) {
+  const inventedStages = (block.type === 'short_answer' || block.type === 'single_choice') && /существенных этапов|полное решение с обоснованием/u.test(block.criteria ?? '')
+  if (!inventedStages && criteriaCoversAllLevels(block.criteria, max)) {
     const levels = parseCriteriaLevels(block.criteria)
     return { ...block, points: max, criteria: formatCriteriaLevels(levels) }
   }
   const hadModelCriteria = Boolean(block.criteria?.trim())
+  const answerOnly = block.type === 'short_answer' || block.type === 'single_choice'
+  const levels = answerOnly && max > 1
+    ? Array.from({ length: max + 1 }, (_, i) => {
+        const points = max - i
+        return { points, description: points === max ? 'дан полный верный ответ (засчитываются равносильные записи)'
+          : points === 0 ? 'ответ неверный или отсутствует'
+            : 'правило частичного зачёта не задано — требуется уточнение учителем' }
+      })
+    : defaultCriteriaLevels(block.type, max)
   return {
     ...block,
     points: max,
-    criteria: formatCriteriaLevels(defaultCriteriaLevels(block.type, max)),
+    criteria: formatCriteriaLevels(levels),
     criteriaStatus: hadModelCriteria || max > 1 ? 'needs-review' : block.criteriaStatus,
   }
 }

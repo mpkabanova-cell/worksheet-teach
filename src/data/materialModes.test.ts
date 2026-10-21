@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { draftForExport, exportAnswerOptions, groupsForMode, replaceBlockKeepingSlot, stripDuplicateAnswer } from './materialModes'
+import { blockAnswerText, draftForExport, exportAnswerOptions, groupsForMode, replaceBlockKeepingSlot, stripDuplicateAnswer } from './materialModes'
 import { emptyDraft, type WorksheetBlock } from './worksheet'
 
 const block = (id: string, extra: Partial<WorksheetBlock> = {}): WorksheetBlock => ({
@@ -13,6 +13,16 @@ const block = (id: string, extra: Partial<WorksheetBlock> = {}): WorksheetBlock 
 })
 
 describe('materialModes', () => {
+  it('таблица соответствий использует тот же ключ, что линии задания', () => {
+    expect(blockAnswerText(block('m', { type: 'matching',
+      leftItems: [{ id: 'left_1', text: '2 × 3' }, { id: 'left_2', text: '2 × 4' }],
+      rightItems: [{ id: 'right_1', text: '8' }, { id: 'right_2', text: '6' }],
+      correctAnswers: ['left_1 → right_2', 'left_2 → right_1'],
+    }))).toBe('2 × 3 → 6\n2 × 4 → 8')
+  })
+  it('таблица распределения читает текущие ячейки задания', () => {
+    expect(blockAnswerText(block('g', { type: 'grouping', tableHeaders: ['Чётные', 'Нечётные'], tableCells: [['2', '3'], ['4', '']] }))).toBe('Чётные: 2; 4\nНечётные: 3')
+  })
   it('student export never contains answers, even after teacher view', () => {
     const d = { ...emptyDraft(), showAnswers: true, print: { ...emptyDraft().print, audience: 'student' as const, answersSeparate: true } }
     expect(exportAnswerOptions(d.print)).toEqual({ showAnswers: false, answersSeparate: false })

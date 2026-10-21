@@ -9,6 +9,7 @@ import type {
   WorksheetDraft,
 } from './worksheet'
 import { mergeModeParams, uid } from './worksheet'
+import { getMatchingCorrectLinks } from './blockUtils'
 import type { CardKind, DiffFormat } from './worksheet'
 
 export const MATERIAL_FORM_TITLE = 'Создание материала'
@@ -278,10 +279,19 @@ export function blockAnswerText(b: WorksheetBlock): string {
   }
   if (b.type === 'fill_gaps') return (b.gapsAnswers ?? []).join('; ')
   if (b.type === 'matching') {
-    const right = new Map((b.rightItems ?? []).map((r) => [r.id, r.text]))
-    return (b.leftItems ?? [])
-      .map((l) => `${l.text} — ${right.get(l.id) ?? '?'}`)
-      .join('; ')
+    const right = b.rightItems ?? []
+    return getMatchingCorrectLinks(b, right)
+      .map(({ leftIndex, rightIndex }) => {
+        const leftItem = b.leftItems?.[leftIndex]
+        const rightItem = right[rightIndex]
+        return leftItem && rightItem ? `${leftItem.text} → ${rightItem.text}` : ''
+      }).filter(Boolean).join('\n')
+  }
+  if (b.type === 'grouping' || b.type === 'table') {
+    return (b.tableHeaders ?? []).map((header, index) => {
+      const items = (b.tableCells ?? []).map((row) => row[index]?.trim()).filter(Boolean)
+      return items.length ? `${header}: ${items.join('; ')}` : ''
+    }).filter(Boolean).join('\n') || (b.correctAnswers ?? []).join('; ')
   }
   if (b.type === 'ordering') return (b.orderItems ?? []).join(' → ')
   return (b.correctAnswers ?? []).join('; ')
