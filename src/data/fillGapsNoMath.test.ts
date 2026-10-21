@@ -23,8 +23,8 @@ describe('пропуски никогда не делаются в формул�
       ...base,
       type: 'fill_gaps',
       question: 'Вставьте слова.',
-      gapsSourceText: 'Верхнее число дроби называется числитель.',
-      gapsAnswers: ['числитель'],
+      gapsSourceText: 'Маша купила в магазине свежие яблоки.',
+      gapsAnswers: ['яблоки'],
     } as WorksheetBlock)
     expect(block.type).toBe('fill_gaps')
   })
