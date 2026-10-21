@@ -404,6 +404,9 @@ export function WorksheetScreen({
               ) : (
                 <h1 className="sheet-title">{sheetTopic}</h1>
               )}
+              {groupTabs?.length && activeGroupId && groupTabs.find((g) => g.id === activeGroupId && g.id.startsWith('variant-')) ? (
+                <p className="sheet-variant-label">{groupTabs.find((g) => g.id === activeGroupId)?.label}</p>
+              ) : null}
             </div>
 
             <div

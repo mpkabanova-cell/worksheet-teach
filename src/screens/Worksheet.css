@@ -3544,3 +3544,4 @@
 .ws-navbar-left { flex: 1 1 auto; }
 @media (min-width: 900px) { .ws-actions { flex-wrap: nowrap; flex-shrink: 0; } }
 @media (max-width: 899px) { .ws-navbar { height: auto; flex-wrap: wrap; row-gap: 8px; } }
+.sheet-variant-label { margin: 4px 0 0; font-size: 14px; color: var(--text-secondary); }
