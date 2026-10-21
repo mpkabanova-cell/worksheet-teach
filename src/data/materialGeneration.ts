@@ -1,7 +1,7 @@
 import { generateWorksheetAI, type GenerateMode } from './ai'
 import { verifiedAnswer } from './fractionCheck'
 import { reportStage, throwIfCancelled } from './generationControl'
-import { groupsForMode, levelToStars, materialTypeOf, modeParamsOf, taskCountForMode, LEVEL_LABELS } from './materialModes'
+import { groupsForMode, levelToStars, materialTypeOf, modeParamsOf, taskCountForMode, LEVEL_LABELS, CARD_KIND_LABELS } from './materialModes'
 import type { DiffLevel, WorksheetBlock, WorksheetDraft } from './worksheet'
 import { createPlan } from './worksheet'
 
@@ -35,12 +35,19 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           : draft
     const result = await generateWorksheetAI(base, mode)
     const points = type === 'assessment' && params.assessment.grading === 'points'
+    let cardN = 0
+    const cardTitle = (b: WorksheetBlock): WorksheetBlock =>
+      type === 'cards' && b.type !== 'page_break' && b.type !== 'text'
+        ? { ...b, title: `Карточка ${++cardN}. ${CARD_KIND_LABELS[params.cards.kind]}` }
+        : b
     return {
       ...result,
       materialType: type,
       modeParams: params,
       groups: [],
-      blocks: verifyBlockAnswers(result.blocks).map((b) => (points && !b.points ? { ...b, points: b.difficulty ?? 1 } : b)),
+      blocks: verifyBlockAnswers(result.blocks)
+        .map((b) => (points && !b.points ? { ...b, points: b.difficulty ?? 1 } : b))
+        .map(cardTitle),
     }
   }
 

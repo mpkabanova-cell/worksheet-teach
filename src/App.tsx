@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { generateSingleTaskAI } from '@/data/ai'
 import { generateMaterialAI, verifyBlockAnswers } from '@/data/materialGeneration'
 import { GenerationCancelled, runGeneration, type GenerationStage } from '@/data/generationControl'
-import { draftForExport, replaceBlockKeepingSlot } from '@/data/materialModes'
+import { anotherCardNote, CARD_KIND_LABELS, draftForExport, materialTypeOf, modeParamsOf, replaceBlockKeepingSlot } from '@/data/materialModes'
 import type { GenerateMode } from '@/data/ai'
 import {
   createEmptyBlock,

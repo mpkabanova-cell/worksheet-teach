@@ -51,10 +51,12 @@ export function PrintScreen({ draft, onChangeDraft, onBack, onPrint, onPdf, onDo
             <input type="radio" name="audience" checked={audience === 'student'} onChange={() => setPrint({ audience: 'student' })} />
             Для ученика — без ответов и решений
           </label>
+          {isCards && !modeParamsOf(draft).cards.teacherAnswers ? null : (
           <label className="print-check">
             <input type="radio" name="audience" checked={audience === 'teacher'} onChange={() => setPrint({ audience: 'teacher' })} />
             Для учителя — с ответами{materialTypeOf(draft) === 'assessment' ? ', баллами и критериями' : ''}
           </label>
+          )}
         </fieldset>
 
         {audience === 'teacher' ? (
