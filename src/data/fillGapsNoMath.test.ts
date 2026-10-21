@@ -28,4 +28,17 @@ describe('пропуски никогда не делаются в формул�
     } as WorksheetBlock)
     expect(block.type).toBe('fill_gaps')
   })
+
+  it('формулировка переписывается под краткий ответ без «…» и без «Заполните пропуски»', () => {
+    const block = sanitizeBlock({
+      ...base,
+      type: 'fill_gaps',
+      question: 'Заполните пропуски, восстановив коэффициенты.',
+      gapsText: 'Разность $11m - 4m$ записывается как ___$m$. Коэффициент при $m$ равен ___.',
+      gapsAnswers: ['7', '7'],
+    } as WorksheetBlock)
+    expect(block.type).toBe('short_answer')
+    expect(block.question).not.toMatch(/…|___|пропуск/i)
+    expect(block.question).toContain('Найдите коэффициент при $m$.')
+  })
 })
