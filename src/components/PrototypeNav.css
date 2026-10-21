@@ -1,0 +1,132 @@
+.proto-nav {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+  background: rgba(22, 26, 51, 0.92);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(22, 26, 51, 0.28);
+  font-size: 13px;
+}
+
+.proto-nav[open] {
+  border-radius: 14px;
+  max-width: 280px;
+}
+
+.proto-nav summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.proto-nav[open] summary {
+  width: auto;
+  height: auto;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.proto-nav summary::-webkit-details-marker {
+  display: none;
+}
+
+.proto-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proto-nav-title {
+  display: none;
+}
+
+.proto-nav[open] .proto-nav-title {
+  display: inline;
+}
+
+.proto-nav[open] .proto-nav-icon {
+  display: none;
+}
+
+.proto-body {
+  padding: 0 12px 12px;
+  max-height: min(50vh, calc(100vh - 96px));
+  overflow: auto;
+}
+
+.proto-body p {
+  margin: 8px 4px 6px;
+  opacity: 0.6;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.proto-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.proto-list button {
+  text-align: left;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.proto-list button:hover,
+.proto-list button.active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.proto-list button.active {
+  color: #cbbfff;
+}
+
+.proto-select-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+  margin-top: 4px;
+}
+
+.proto-select-row span {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.proto-select-row select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .proto-nav {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .proto-nav[open] summary {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,71 @@
+import { describe, expect, it } from 'vitest'
+import {
+  cellsRowsNeededForText,
+  normalizeRussianMathTex,
+  preprocessMathText,
+  repairJsonLatexEscapes,
+  texForCellsLayout,
+} from '@/data/mathTextUtils'
+
+describe('repairJsonLatexEscapes', () => {
+  it('repairs \\tg corrupted by JSON tab escape', () => {
+    expect(repairJsonLatexEscapes('$' + '\t' + 'g 30^{\\circ}$')).toBe('$\\tg 30^{\\circ}$')
+  })
+})
+
+describe('normalizeRussianMathTex', () => {
+  it('converts decimal dot to comma in expressions', () => {
+    expect(normalizeRussianMathTex('0.5x+3')).toBe('0,5x+3')
+    expect(normalizeRussianMathTex('3.14')).toBe('3,14')
+    expect(normalizeRussianMathTex('-2.5 \\cdot 1.2')).toBe('-2,5 \\cdot 1,2')
+  })
+
+  it('does not touch LaTeX command dots', () => {
+    expect(normalizeRussianMathTex('\\ldots')).toBe('\\ldots')
+    expect(normalizeRussianMathTex('\\dots')).toBe('\\dots')
+  })
+
+  it('normalizes trig macros to Russian notation', () => {
+    expect(normalizeRussianMathTex('\\tan x + \\cot y')).toBe('\\tg x + \\ctg y')
+    expect(normalizeRussianMathTex('\\arctan 2')).toBe('\\arctg 2')
+  })
+})
+
+describe('preprocessMathText', () => {
+  it('normalizes decimals inside inline math', () => {
+    expect(preprocessMathText('Значение $0.5x+3$ верно.')).toBe('Значение $0,5x+3$ верно.')
+  })
+
+  it('normalizes decimals inside display math', () => {
+    expect(preprocessMathText('$$0.5x+3$$')).toBe('$$0,5x+3$$')
+  })
+
+  it('leaves plain text decimals unchanged', () => {
+    expect(preprocessMathText('Число 0.5 в тексте.')).toBe('Число 0.5 в тексте.')
+  })
+
+  it('merges split inline math and wraps plain polynomials', () => {
+    const tex = String.raw`5x^3y^2 - 2x^2y^4 + 7xy^3 - 10`
+    expect(preprocessMathText(`Запишите $5x^3y^2$ − $2x^2y^4$ + $7xy^3$ − $10$.`)).toBe(
+      `Запишите $${tex}$.`,
+    )
+    expect(preprocessMathText(`Запишите степень многочлена ${tex}.`)).toBe(
+      `Запишите степень многочлена $${tex}$.`,
+    )
+  })
+
+  it('removes plain math duplicated by an equivalent $...$ suffix', () => {
+    expect(preprocessMathText('y = 3x - 2$y=3x-2$')).toBe('$y=3x-2$')
+  })
+})
+
+describe('cells layout helpers', () => {
+  it('promotes fractions to dfrac for cells', () => {
+    expect(texForCellsLayout(String.raw`\frac{3}{10}`)).toBe(String.raw`\dfrac{3}{10}`)
+  })
+
+  it('counts one row for plain text and two for fractions', () => {
+    expect(cellsRowsNeededForText('7')).toBe(1)
+    expect(cellsRowsNeededForText(String.raw`$\frac{3}{10}$`)).toBe(2)
+  })
+})
