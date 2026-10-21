@@ -69,14 +69,14 @@ export function GradingPanel({
                     {openId === b.id ? 'Скрыть решение и критерии ▴' : 'Решение и критерии ▾'}
                   </Button>
                   {b.criteriaStatus === 'needs-review' ? (
-                    <span className="grading-flag" role="note">Проверьте ключ и критерии</span>
+                    <span className="grading-flag" role="note">Проверьте критерии: не все уровни баллов описаны или баллы меняли вручную</span>
                   ) : null}
                   {openId === b.id ? (
                     <div className="grading-details">
                       {b.solution ? (
                         <div className="grading-row">
                           <span>Решение</span>
-                          <MathText as="div" text={b.solution} />
+                          <MathLines text={b.solution} />
                         </div>
                       ) : null}
                       {b.criteria ? (
@@ -90,7 +90,7 @@ export function GradingPanel({
                   ) : null}
                 </td>
                 <td>
-                  <div className="grading-answer"><MathText as="span" text={blockAnswerText(b) || 'Ответ не задан'} /></div>
+                  <div className="grading-answer"><MathLines text={blockAnswerText(b) || 'Ответ не задан'} /></div>
                 </td>
                 <td>{b.points ?? '—'}</td>
               </tr>
@@ -128,5 +128,16 @@ export function GradingPanel({
         </fieldset>
       ) : null}
     </section>
+  )
+}
+
+/** Многострочный текст с формулами: каждая строка — отдельный блок, чтобы формулы не ломались. */
+function MathLines({ text }: { text: string }) {
+  return (
+    <div className="grading-lines">
+      {text.split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line, i) => (
+        <MathText key={i} as="div" text={line} />
+      ))}
+    </div>
   )
 }
