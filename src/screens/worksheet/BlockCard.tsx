@@ -8,6 +8,7 @@ import {
   getGapsSourceText,
   getGapsStudentText,
   getGapsDisplayAnswers,
+  getDisplayAnswerText,
   getValidGapAnswers,
   getOrderAnswerNumbers,
   getOrderDisplayItems,
@@ -19,6 +20,7 @@ import {
   TEXT_BODY_MAX_LENGTH,
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
+import { stripDuplicateAnswer } from '@/data/materialModes'
 import { MathText } from '@/components/MathText'
 import { WysiwygTextarea } from '@/components/WysiwygTextarea'
 import { FigmaIcon } from '@/components/ui'
