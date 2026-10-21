@@ -306,7 +306,7 @@ export function Create({
           <div className="create-form">
             <div className="create-form-scroll">
             <div className="create-main">
-              {isGenerateLike ? (
+              {isGenerateLike || mode === 'manual' ? (
                 <Field label="Тип материала">
                   <Select
                     options={MATERIAL_TYPES.map((m) => m.label)}
