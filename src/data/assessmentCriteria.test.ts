@@ -1,0 +1,30 @@
+import { describe, expect, it } from 'vitest'
+import { criteriaCoversAllLevels, ensureCriteriaLevels, platformTaskNumbers } from './assessmentCriteria'
+import { draftForExport } from './materialModes'
+import { emptyDraft, type WorksheetBlock } from './worksheet'
+
+const task = (id: string, groupId: string, extra: Partial<WorksheetBlock> = {}): WorksheetBlock => ({
+  id, type: 'short_answer', page: 0, title: id, groupId, ...extra,
+})
+
+describe('критерии по всем уровням', () => {
+  it('требует описания каждого уровня от максимума до 0', () => {
+    expect(criteriaCoversAllLevels('2 балла — верно\n0 баллов — неверно', 2)).toBe(false)
+    expect(criteriaCoversAllLevels('2 балла — верно\n1 балл — одна ошибка\n0 баллов — неверно', 2)).toBe(true)
+  })
+  it('дополняет неполные критерии всеми уровнями и просит проверки', () => {
+    const b = ensureCriteriaLevels(task('a', 'v1', { points: 3, criteria: 'Максимум 3 балла' }))
+    expect(criteriaCoversAllLevels(b.criteria, 3)).toBe(true)
+    expect(b.criteriaStatus).toBe('needs-review')
+  })
+})
+
+describe('нумерация в выгрузке как на платформе', () => {
+  it('каждый вариант начинается с задания 1', () => {
+    const blocks = [task('a', 'v1'), task('b', 'v1'), task('c', 'v2'), task('d', 'v2')]
+    const groups = [{ id: 'v1', label: 'Вариант 1', kind: 'variant' as const }, { id: 'v2', label: 'Вариант 2', kind: 'variant' as const }]
+    expect(platformTaskNumbers(blocks, groups).get('c')).toBe(1)
+    const exp = draftForExport({ ...emptyDraft(), blocks, groups, print: { ...emptyDraft().print, groupFilter: 'all' } })
+    expect(exp.blocks.find((b) => b.id === 'd')?.exportNumber).toBe(2)
+  })
+})
