@@ -443,6 +443,14 @@ export function sanitizeBlock(block: WorksheetBlock): WorksheetBlock {
       : rawGapsText
         ? migrateGapsTextToSource(rawGapsText, sanitized.gapsAnswers ?? [])
         : ''
+    const originalText = (asText(sanitized.gapsText) ?? '').trim() || rawSource || ''
+    if (fillGapsContainsMath(originalText, sanitized.gapsAnswers ?? [])) {
+      return resolveBlockQuestion(rejectInvalidFillGapsBlock({
+        ...sanitized,
+        gapsSourceText: originalText,
+        gapsText: originalText,
+      }))
+    }
     const source = sanitizeGapsSourceText(rawSource)
     sanitized.gapsSourceText = source
     sanitized.gapsText = rawGapsText || undefined
@@ -472,6 +480,23 @@ function rejectInvalidFillGapsBlock(block: WorksheetBlock): WorksheetBlock {
   const source =
     getGapsSourceText(block) || block.gapsSourceText?.trim() || block.gapsText?.trim() || ''
   const question = block.question?.trim() || 'Заполните пропуски в тексте.'
+  const answers = (block.gapsAnswers ?? []).map((a) => a.trim()).filter(Boolean)
+  const rawText = (block.gapsText?.trim() || source).replace(/\\?_{3,}|\\_(\\_)+/g, '…')
+
+  if (answers.length > 0 && fillGapsContainsMath(rawText, answers)) {
+    // Формулу с пропуском превращаем в задание с кратким ответом — формула остаётся целой.
+    const body = rawText.trim()
+    return {
+      ...block,
+      type: 'short_answer',
+      question: body && body !== question ? `${question}\n${body}` : question,
+      correctAnswers: [answers.join('; ')],
+      gapsSourceText: undefined,
+      gapsText: undefined,
+      gapsAnswers: undefined,
+      gapsShuffleAnswers: undefined,
+    }
+  }
 
   return {
     ...block,
@@ -850,9 +875,18 @@ export function getFillGapsValidationError(block: WorksheetBlock): string | null
   if (block.type !== 'fill_gaps') return null
   const source = getGapsSourceText(block)
   if (!source.trim()) return 'empty'
+  if (fillGapsContainsMath(source, block.gapsAnswers ?? [])) return 'gaps_in_formulas'
   if (hasForbiddenGapsInFormulas(source, block.gapsAnswers ?? [])) return 'gaps_in_formulas'
   if (getValidGapAnswers(block).length === 0) return 'no_valid_gaps'
   return null
+}
+
+const MATH_HINT_RE = /\$|\\[a-zA-Z]+|\d\s*\/\s*\d|[=^]/
+
+/** Пропуски никогда не делаются в формулах: любая математика в тексте или ответах запрещает fill_gaps. */
+export function fillGapsContainsMath(source: string, answers: string[]): boolean {
+  if (MATH_HINT_RE.test(source)) return true
+  return answers.some((a) => MATH_HINT_RE.test(a) || /^[\d\s.,+\-*/()]+$/.test(a.trim()))
 }
 
 export function isValidFillGapsBlock(block: WorksheetBlock): boolean {

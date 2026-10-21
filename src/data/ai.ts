@@ -344,7 +344,8 @@ export function ensureWorksheetTaskBlocks(
       title: sourceBlock?.title ?? block.title ?? `Задание ${i + 1}`,
     })
 
-    if (planItem.type === 'fill_gaps' && sanitized.type !== 'fill_gaps') {
+    // short_answer здесь — это задание с формулой, честно переведённое из «пропусков» (пропуски в формулах запрещены).
+    if (planItem.type === 'fill_gaps' && sanitized.type !== 'fill_gaps' && sanitized.type !== 'short_answer') {
       sanitized = sanitizeBlock({
         ...mockBlockForPlanIndex(draft, result, planItem, brief, refContent, anchors),
         id: sourceBlock?.id ?? block.id,
