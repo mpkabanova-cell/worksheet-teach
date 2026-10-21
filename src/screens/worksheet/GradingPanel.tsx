@@ -69,7 +69,7 @@ export function GradingPanel({
                     {openId === b.id ? 'Скрыть решение и критерии ▴' : 'Решение и критерии ▾'}
                   </Button>
                   {b.criteriaStatus === 'needs-review' ? (
-                    <span className="grading-flag" role="note">Проверьте критерии: не все уровни баллов описаны или баллы меняли вручную</span>
+                    <span className="grading-flag" role="note">{b.criteriaReviewReason ?? 'Проверьте ключ и критерии'}</span>
                   ) : null}
                   {openId === b.id ? (
                     <div className="grading-details">

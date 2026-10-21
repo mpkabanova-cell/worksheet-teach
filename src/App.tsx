@@ -354,7 +354,7 @@ export default function App() {
           JSON.stringify(b.correctOptionIds) !== JSON.stringify(block.correctOptionIds) ||
           JSON.stringify(b.gapsAnswers) !== JSON.stringify(block.gapsAnswers)
         return contentChanged && (b.points != null || b.criteria)
-          ? { ...block, criteriaStatus: 'needs-review' as const }
+          ? { ...block, criteriaStatus: 'needs-review' as const, criteriaReviewReason: 'Условие или ответ изменены вручную — проверьте ключ и критерии.' }
           : block
       }),
     }))
