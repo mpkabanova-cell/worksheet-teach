@@ -1,0 +1,7 @@
+[
+{"capability":"frontend code","source":"Vite React SPA","outcome":"migrate","status":"done","next_action":"verify in preview"},
+{"capability":"AI chat proxy /api/chat","source":"Express + OpenRouter","outcome":"preserve OpenRouter","status":"implemented","next_action":"add OPENAI_API_KEY secret"},
+{"capability":"file context /api/extract-context","source":"Express, pdf-parse, vision OCR","outcome":"preserve; PDF now read by multimodal model","status":"implemented","next_action":"verify with key"},
+{"capability":"database/auth","source":"none (localStorage)","outcome":"none needed","status":"verified","next_action":"none"},
+{"capability":"ocr_to_doc_project-main sub-app","source":"Python/pandoc/LibreOffice","outcome":"not migrated (cannot run on platform)","status":"blocked","next_action":"user decision"}
+]

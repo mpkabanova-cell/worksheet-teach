@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import "../styles/global.css";
 
 const App = lazy(() => import("../App"));
 
