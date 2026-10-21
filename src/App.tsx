@@ -179,7 +179,12 @@ export default function App() {
         const next = await runGeneration(() => generateMaterialAI(draftRef.current, mode), {
           signal: controller.signal,
           onStage: (st) => {
-            if (!controller.signal.aborted) setGenStage(st)
+            if (controller.signal.aborted) return
+            // Индикатор этапов не откатывается назад при повторных попытках.
+            setGenStage((prev) => {
+              if (!prev) return st
+              return GEN_STAGE_ORDER.indexOf(st) >= GEN_STAGE_ORDER.indexOf(prev) ? st : prev
+            })
           },
         })
         if (controller.signal.aborted) return
