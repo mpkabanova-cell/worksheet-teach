@@ -168,7 +168,8 @@ export default function App() {
     const mode = generateModeRef.current
     setGenStage(null)
     try {
-      localStorage.setItem(PENDING_KEY, JSON.stringify({ draft: draftRef.current, mode }))
+      rememberTabDraft(sessionStorage, draftRef.current.id)
+      savePending(localStorage, draftRef.current.id, { draft: draftRef.current, mode })
     } catch {
       /* storage full */
     }
@@ -182,7 +183,7 @@ export default function App() {
           },
         })
         if (controller.signal.aborted) return
-        localStorage.removeItem(PENDING_KEY)
+        clearPending(localStorage, draftRef.current.id)
         setDraft(syncPagesFromBreaks(next))
         setActiveGroupId(next.groups?.[0]?.id ?? null)
         setPendingGenerate(false)
@@ -205,7 +206,7 @@ export default function App() {
 
   const cancelGeneration = () => {
     genAbortRef.current?.abort()
-    localStorage.removeItem(PENDING_KEY)
+    clearPending(localStorage, draftRef.current.id)
     setGenError(null)
     setPendingGenerate(false)
     if (generateModeRef.current === 'regenerate') setScreen('edit')
@@ -223,7 +224,7 @@ export default function App() {
   }
 
   const backToFormFromError = () => {
-    localStorage.removeItem(PENDING_KEY)
+    clearPending(localStorage, draftRef.current.id)
     setGenError(null)
     if (generateModeRef.current === 'regenerate') setScreen('edit')
     else {
@@ -232,12 +233,12 @@ export default function App() {
     }
   }
 
-  // Восстановление после обновления страницы
+  // Восстановление после обновления страницы — только документ этой вкладки
   useEffect(() => {
     try {
-      const pending = localStorage.getItem(PENDING_KEY)
-      if (pending) {
-        const parsed = JSON.parse(pending) as { draft: Record<string, unknown>; mode: GenerateMode }
+      const found = restoreForTab(localStorage, sessionStorage)
+      if (found.kind === 'pending-own') {
+        const parsed = JSON.parse(found.payload) as { draft: Record<string, unknown>; mode: GenerateMode }
         setDraftState(migrateWorksheetDraft(parsed.draft))
         setGenerateMode(parsed.mode)
         generateModeRef.current = parsed.mode
@@ -245,9 +246,12 @@ export default function App() {
         setScreen('loader')
         return
       }
-      const auto = localStorage.getItem(AUTOSAVE_KEY)
-      if (auto) {
-        const parsed = JSON.parse(auto) as { draft: Record<string, unknown> }
+      if (found.kind === 'pending-foreign') {
+        showToast('В другой вкладке создаётся материал — этот документ не тронут')
+        return
+      }
+      if (found.kind === 'autosave') {
+        const parsed = JSON.parse(found.payload) as { draft: Record<string, unknown> }
         const restored = normalizeWorksheetDraft(migrateWorksheetDraft(parsed.draft))
         if (restored.blocks.length) {
           setDraftState(restored)
@@ -262,12 +266,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Автосохранение черновика в браузере, пока открыт редактор
+  // Автосохранение черновика в браузере, пока открыт редактор — под ключом с id документа
   useEffect(() => {
     const inEditor = ['edit', 'edit-widget', 'add-block', 'preview', 'show-answers', 'print'].includes(screen)
     try {
-      if (inEditor) localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ draft }))
-      else if (screen === 'home' || screen === 'worksheets-list') localStorage.removeItem(AUTOSAVE_KEY)
+      if (inEditor) {
+        rememberTabDraft(sessionStorage, draft.id)
+        saveAutosave(localStorage, draft.id, { draft })
+      } else if (screen === 'home' || screen === 'worksheets-list') {
+        clearAutosave(localStorage, draft.id)
+      }
     } catch {
       /* storage full */
     }
