@@ -65,6 +65,12 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
     } else {
       const level = g.id.replace('level-', '') as DiffLevel
       const count = taskCountForMode(draft)
+      const versions = params.differentiated.format === 'versions'
+      const firstTask = allBlocks.find((b) => b.question || b.body)
+      const versionNote =
+        versions && firstTask
+          ? ` Это версия той же учебной задачи, что и в базовом уровне: «${(firstTask.question || firstTask.body || '').slice(0, 400)}». Проверяй тот же учебный результат; меняй степень самостоятельности и характер рассуждения, а не только данные.`
+          : ''
       part = withWish(
         {
           ...draft,
@@ -72,7 +78,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           taskCount: count,
           taskPlan: createPlan(count).map((row) => ({ ...row, difficulty: LEVEL_TO_PLAN[level] })),
         },
-        `Уровень: ${LEVEL_LABELS[level]}.`,
+        `Уровень: ${LEVEL_LABELS[level]}.${versionNote}`,
       )
     }
     reportStage('tasks')
