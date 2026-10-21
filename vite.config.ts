@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // jspdf has no worker export; the app only uses it in the browser.
+    resolve: { alias: [{ find: /^jspdf$/, replacement: "jspdf/dist/jspdf.es.min.js" }] },
+  },
 });
