@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { MathText } from '@/components/MathText'
 import { CriteriaLevelsView } from '@/components/CriteriaLevelsView'
+import { Button } from '@/components/ui'
 import { blockAnswerText, modeParamsOf } from '@/data/materialModes'
-import { isNumberedTaskBlock, platformTaskNumbers } from '@/data/assessmentCriteria'
+import { ensureCriteriaLevels, isNumberedTaskBlock, platformTaskNumbers } from '@/data/assessmentCriteria'
 import { defaultGradeScale, gradeForPoints, isValidGradeScale, pointsLabel, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
 
 /** Учительская панель «Ответы и оценивание» для работ для проверки. */
@@ -25,6 +26,7 @@ export function GradingPanel({
     label: g.label,
     tasks: draft.blocks
       .filter((b) => (g.id ? b.groupId === g.id : true) && isNumberedTaskBlock(b))
+      .map(ensureCriteriaLevels)
       .sort((a, b) => (numbers.get(a.id) ?? 0) - (numbers.get(b.id) ?? 0)),
   }))
   const sectionTotal = (tasks: typeof draft.blocks) => tasks.reduce((sum, b) => sum + (b.points ?? 0), 0)
@@ -51,7 +53,7 @@ export function GradingPanel({
           <thead>
             <tr>
               <th>№</th>
-              <th>Умение</th>
+              <th>Задание / умение</th>
               <th>Ответ</th>
               <th>Баллы</th>
             </tr>
@@ -61,10 +63,11 @@ export function GradingPanel({
               <tr key={b.id} className={openId === b.id ? 'is-open' : ''}>
                 <td>{numbers.get(b.id)}</td>
                 <td>
-                  <span className="grading-skill-name">{b.skill || b.title || 'Задание'}</span>
-                  <button type="button" className="grading-expand" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
+                  <MathText as="div" text={b.question || b.instruction || b.title || 'Задание'} />
+                  {b.skill ? <span className="grading-skill-name">{b.skill}</span> : null}
+                  <Button variant="ghost" size="sm" type="button" className="grading-expand" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
                     {openId === b.id ? 'Скрыть решение и критерии ▴' : 'Решение и критерии ▾'}
-                  </button>
+                  </Button>
                   {b.criteriaStatus === 'needs-review' ? (
                     <span className="grading-flag" role="note">Проверьте ключ и критерии</span>
                   ) : null}
@@ -87,7 +90,7 @@ export function GradingPanel({
                   ) : null}
                 </td>
                 <td>
-                  <MathText as="span" text={blockAnswerText(b) || '—'} />
+                  <div className="grading-answer"><MathText as="span" text={blockAnswerText(b) || 'Ответ не задан'} /></div>
                 </td>
                 <td>{b.points ?? '—'}</td>
               </tr>

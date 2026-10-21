@@ -20,8 +20,15 @@ describe('критерии по всем уровням', () => {
     expect(b.criteriaStatus).toBe('needs-review')
   })
   it('требует описания каждого уровня от максимума до 0', () => {
+    expect(criteriaCoversAllLevels('1 балл — верно\n1 балл — верно\n0 баллов — неверно', 1)).toBe(false)
     expect(criteriaCoversAllLevels('2 балла — верно\n0 баллов — неверно', 2)).toBe(false)
     expect(criteriaCoversAllLevels('2 балла — верно\n1 балл — одна ошибка\n0 баллов — неверно', 2)).toBe(true)
+  })
+  it('не придумывает этапы решения для задания с кратким ответом', () => {
+    const b = ensureCriteriaLevels(task('a', 'v1', { points: 3, criteria: '3 балла — верное полное решение с обоснованием\n2 балла — верно выполнено 2 из 3 существенных этапов\n1 балл — верно выполнено 1 из 3 существенных этапов\n0 баллов — неверно' }))
+    expect(b.criteria).not.toContain('этапов')
+    expect(b.criteria).toContain('правило частичного зачёта не задано')
+    expect(b.criteriaStatus).toBe('needs-review')
   })
   it('дополняет неполные критерии всеми уровнями и просит проверки', () => {
     const b = ensureCriteriaLevels(task('a', 'v1', { points: 3, criteria: 'Максимум 3 балла' }))

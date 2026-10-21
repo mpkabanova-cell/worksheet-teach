@@ -21,7 +21,7 @@ import {
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
 import { stripDuplicateAnswer } from '@/data/materialModes'
-import { changeTaskPoints } from '@/data/assessmentCriteria'
+import { changeTaskPoints, ensureCriteriaLevels } from '@/data/assessmentCriteria'
 import { CriteriaLevelsView } from '@/components/CriteriaLevelsView'
 import { MathText } from '@/components/MathText'
 import { WysiwygTextarea } from '@/components/WysiwygTextarea'
@@ -412,15 +412,6 @@ export function BlockCard({
           />
         ) : null}
 
-        {effectiveShowAnswer && !isEditing && (block.solution || block.points || block.criteria) ? (
-          <div className="ws-teacher-key" aria-label="Для учителя">
-            {block.criteria ? <div><strong>Критерии</strong><CriteriaLevelsView text={block.criteria} /></div> : null}
-            {block.solution ? (
-              <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
-            ) : null}
-          </div>
-        ) : null}
-
         {block.type === 'fill_gaps' ? (
           <div className="ws-task-slot">
             {isEditing ? (
@@ -503,6 +494,14 @@ export function BlockCard({
           </div>
         ) : null}
 
+        {effectiveShowAnswer && !isEditing && (block.solution || block.criteria) ? (
+          <div className="ws-teacher-key" aria-label="Для учителя">
+            {block.criteria ? <div><strong>Критерии</strong><CriteriaLevelsView text={ensureCriteriaLevels(block).criteria ?? ''} /></div> : null}
+            {block.solution ? (
+              <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
+            ) : null}
+          </div>
+        ) : null}
       </article>
     </div>
   )
