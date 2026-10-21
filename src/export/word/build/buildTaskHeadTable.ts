@@ -1,4 +1,5 @@
 import type { WorksheetBlock } from '@/data/worksheet'
+import { pointsLabel } from '@/data/worksheet'
 import { isQuestionPlaceholder } from '@/data/blockUtils'
 import {
   getStarEmptyPng,
@@ -348,7 +349,7 @@ export async function buildTaskHeadTable(
     isAnswerBlock && isQuestionPlaceholder(questionText)
       ? COLORS.textSecondary
       : COLORS.textDefault
-  const showDifficulty = ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
+  const showDifficulty = block.points == null && ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
   const difficultyTopGapPx = isAnswerBlock ? LAYOUT.answerTaskMainGap : LAYOUT.taskMainGap
 
   const numCellWidthDxa = pxToDxa(LAYOUT.taskNumWidth)
@@ -364,6 +365,14 @@ export async function buildTaskHeadTable(
     ctx,
     rowKeepNext,
   )
+  if (block.points != null) {
+    const pointsWidth = pxToDxa(88)
+    questionParagraphs.unshift(new Paragraph({
+      alignment: 'right',
+      children: [new TextRun({ text: pointsLabel(block.points), bold: true, font: runFont(), size: pxToHalfPoints(TYPO.plainBody.sizePx), color: COLORS.textDefault })],
+    }))
+    void pointsWidth
+  }
 
   const rows: TableRow[] = [
     new TableRow({

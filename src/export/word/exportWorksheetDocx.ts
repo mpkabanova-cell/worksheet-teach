@@ -68,6 +68,8 @@ export async function exportWorksheetDocxBlob(
               right: PAGE_MARGIN_TWIPS,
             },
             size: {
+              width: 11906,
+              height: 16838,
               orientation:
                 options.orientation === 'landscape'
                   ? PageOrientation.LANDSCAPE

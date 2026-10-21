@@ -240,6 +240,7 @@ export function draftForExport(draft: WorksheetDraft): WorksheetDraft {
   return {
     ...draft,
     blocks,
+    exportCriteriaBlocks: showAnswers && materialTypeOf(draft) === 'assessment' ? draft.blocks : undefined,
     showAnswers,
     print: { ...draft.print, answersSeparate },
   }
