@@ -512,6 +512,33 @@ export default function App() {
     }
   }
 
+  const [anotherCardBusy, setAnotherCardBusy] = useState(false)
+  const createAnotherCard = async () => {
+    if (anotherCardBusy) return
+    const d0 = draftRef.current
+    const cards = d0.blocks.filter((b) => b.type !== 'page_break' && b.type !== 'text')
+    const prev = cards[cards.length - 1]
+    if (!prev) return openAddGeneratedTask()
+    const kind = modeParamsOf(d0).cards.kind
+    setAnotherCardBusy(true)
+    try {
+      const prevText = [prev.question, prev.body, prev.gapsSourceText].filter(Boolean).join('\n')
+      const fresh = await runGeneration(() =>
+        generateSingleTaskAI(d0, prev.type as Parameters<typeof generateSingleTaskAI>[1], anotherCardNote(prevText)),
+      )
+      const [block] = verifyBlockAnswers([fresh])
+      block.page = prev.page
+      block.title = `Карточка ${cards.length + 1}. ${CARD_KIND_LABELS[kind]}`
+      setDraft((d) => syncPagesFromBreaks({ ...d, blocks: [...d.blocks, block], taskCount: d.taskCount + 1 }))
+      setSelectedBlockId(block.id)
+      showToast('Карточка добавлена')
+    } catch (err) {
+      if (!(err instanceof GenerationCancelled)) showToast(err instanceof Error ? err.message : 'Не удалось создать карточку')
+    } finally {
+      setAnotherCardBusy(false)
+    }
+  }
+
   const revertReplace = () => {
     if (!replaceReview) return
     const { id, prev } = replaceReview
@@ -790,6 +817,8 @@ export default function App() {
           onAddBlockOpen={() => setScreen('edit')}
           onCloseAddBlock={() => setScreen('edit')}
           onGenerateTask={openAddGeneratedTask}
+          onAnotherCard={materialTypeOf(draft) === 'cards' ? createAnotherCard : undefined}
+          anotherCardBusy={anotherCardBusy}
           onRegenerate={() => setModal('regenerate')}
           onSave={handleSave}
           onUndo={undo}
