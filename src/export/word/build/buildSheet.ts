@@ -21,7 +21,7 @@ async function buildPageBlocks(
   for (let index = 0; index < pageBlocks.length; index += 1) {
     const block = pageBlocks[index]
     const taskNumber = isNumberedTask(block)
-      ? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1
+      ? (block.exportNumber ?? countTaskBlocksBefore(ctx.draft.blocks, page, index) + 1)
       : null
     result.push(...(await buildBlockContent(block, taskNumber, ctx, showAnswerOverride)))
   }

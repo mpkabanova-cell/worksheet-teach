@@ -18,6 +18,10 @@ export interface WorksheetTemplateTask {
   groups?: { title: string; items: string[] }[]
   order_items?: string[]
   difficulty?: number | null
+  skill?: string
+  solution?: string
+  max_points?: number | null
+  criteria_levels?: { points: number; description: string }[]
 }
 
 export interface WorksheetJsonTemplate {
@@ -267,6 +271,10 @@ export function templateTaskToAiPayload(
   groups?: { title: string; items: string[] }[]
   order_items?: string[]
   difficulty?: 1 | 2 | 3
+  skill?: string
+  solution?: string
+  max_points?: number | null
+  criteria_levels?: { points: number; description: string }[]
 } {
   const specType = String(task.type || planRowSpecType(planItem ?? ({} as PlanTask)) || 'input')
   const internalType = fromSpecMechanic(
@@ -296,6 +304,10 @@ export function templateTaskToAiPayload(
       task.difficulty === 1 || task.difficulty === 2 || task.difficulty === 3
         ? task.difficulty
         : undefined,
+    skill: task.skill,
+    solution: task.solution,
+    max_points: task.max_points,
+    criteria_levels: task.criteria_levels,
   }
 }
 

@@ -1,3 +1,4 @@
+import { ASSESSMENT_CRITERIA_RULES, platformTaskNumbers } from './assessmentCriteria'
 import type {
   BlockGroup,
   DiffLevel,
@@ -144,7 +145,7 @@ export function modePromptRules(draft: WorksheetDraft): string {
 - Объём соразмерен ${a.minutes} минутам для ученика ${draft.grade || ''} класса.
 - Контрольная — не удлинённая самостоятельная: больше умений и их сочетание, а не больше однотипных примеров.
 - Если указан вариант — у соответствующих позиций совпадают умение, тип рассуждения, уровень, число шагов; различаются только данные. Не допускай более лёгкого случая, отрицательного результата вне изученного или несопоставимых вычислений.
-${a.grading !== 'none' ? '- Для каждого задания укажи в explanation решение и критерии по баллам: «Баллы: N. Критерии: …» — за что даётся каждый балл, допустимые альтернативы и типичные ошибки.' : ''}`
+${a.grading !== 'none' ? `\n${ASSESSMENT_CRITERIA_RULES}` : ''}`
   }
   if (type === 'differentiated') {
     return differentiatedPrompt(draft, p.differentiated.format)
@@ -218,7 +219,10 @@ export function draftForExport(draft: WorksheetDraft): WorksheetDraft {
   const { showAnswers, answersSeparate } = exportAnswerOptions(draft.print)
   const groupId = draft.print.groupFilter ?? 'all'
   const groups = draft.groups ?? []
-  let blocks = blocksForGroup(draft, groupId)
+  const numbers = platformTaskNumbers(draft.blocks, groups)
+  let blocks = blocksForGroup(draft, groupId).map((b) =>
+    numbers.has(b.id) ? { ...b, exportNumber: numbers.get(b.id) } : b,
+  )
   const hideLevelNames =
     materialTypeOf(draft) === 'differentiated' && !modeParamsOf(draft).differentiated.printLevelNames
   if (groups.length && !hideLevelNames) {
