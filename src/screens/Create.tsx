@@ -20,6 +20,7 @@ import { resizePlanToTaskCount, withGenerationBaseline } from '@/data/taskPlanOr
 import type { DifficultyMode, WorksheetDraft } from '@/data/worksheet'
 import {
   ADDITIONAL_WISHES_MAX_LENGTH,
+  createPlan,
   DIFFICULTY_OPTIONS,
   GRADES,
   SUBJECTS,
@@ -28,7 +29,7 @@ import {
   USER_DESCRIPTION_MAX_LENGTH,
 } from '@/data/worksheet'
 import { MATERIAL_TYPES, type ModeParams } from '@/data/worksheet'
-import { MATERIAL_FORM_TITLE, materialTypeOf, modeParamsOf } from '@/data/materialModes'
+import { MATERIAL_FORM_TITLE, materialTypeOf, modeParamsOf, taskCountForMode } from '@/data/materialModes'
 import { ModeFields } from './CreateModeFields'
 import './Create.css'
 
