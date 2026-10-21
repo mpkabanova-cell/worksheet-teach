@@ -59,7 +59,7 @@ export function ModeFields({ materialType, params, setParams, onTaskCount }: Pro
               }}
             />
           </Field>
-          <Field label="Вариантов">
+          <Field label="Количество вариантов">
             <Select
               options={['1', '2', '3', '4']}
               value={String(a.variants)}
@@ -77,7 +77,7 @@ export function ModeFields({ materialType, params, setParams, onTaskCount }: Pro
         </Field>
         <Field label="Оценивание">
           <LabelSelect
-            labels={{ none: 'Без отметки', points: 'Баллы и критерии' }}
+            labels={{ none: 'Обратная связь без отметки', points: 'Баллы и критерии', grade: 'Баллы, критерии и отметка' }}
             value={a.grading}
             onChange={(grading) => setParams('assessment', { grading })}
           />
@@ -98,7 +98,7 @@ export function ModeFields({ materialType, params, setParams, onTaskCount }: Pro
     return (
       <div className="mode-fields">
         <fieldset className="mode-levels">
-          <legend>Уровни</legend>
+          <legend>Уровни сложности</legend>
           {(Object.keys(LEVEL_LABELS) as DiffLevel[]).map((l) => (
             <label key={l} className="mode-check">
               <input type="checkbox" checked={d.levels.includes(l)} onChange={() => toggle(l)} />
