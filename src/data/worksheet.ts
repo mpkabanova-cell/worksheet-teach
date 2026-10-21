@@ -193,6 +193,8 @@ export const MATERIAL_TYPES: { type: MaterialType; label: string }[] = [
 export type AssessmentKind = 'independent' | 'check' | 'control'
 export type DiffLevel = 'basic' | 'advanced' | 'high'
 export type CardFormat = 'task' | 'memo' | 'handout'
+export type DiffFormat = 'levels' | 'versions'
+export type CardKind = 'consolidate' | 'support' | 'apply' | 'extra'
 
 export interface ModeParams {
   assessment: {
@@ -208,6 +210,8 @@ export interface ModeParams {
     skill: string
     delivery: 'shared' | 'sets'
     printLevelNames: boolean
+    /** «Подборка по уровням» или «Одно задание в трёх версиях». */
+    format: DiffFormat
   }
   cards: {
     format: CardFormat
@@ -215,14 +219,27 @@ export interface ModeParams {
     count: number
     perPage: 'auto' | '2' | '4'
     work: 'individual' | 'pair' | 'group'
+    /** Тип карточки из ТЗ: закрепление / нужна опора / самостоятельное применение / дополнительная задача. */
+    kind: CardKind
+    teacherAnswers: boolean
   }
 }
 
 export function defaultModeParams(): ModeParams {
   return {
     assessment: { kind: 'independent', minutes: 20, variants: 2, skills: '', grading: 'none' },
-    differentiated: { levels: ['basic', 'advanced', 'high'], perLevel: 2, skill: '', delivery: 'sets', printLevelNames: false },
-    cards: { format: 'task', purpose: 'practice', count: 4, perPage: 'auto', work: 'individual' },
+    differentiated: { levels: ['basic', 'advanced', 'high'], perLevel: 2, skill: '', delivery: 'sets', printLevelNames: false, format: 'levels' },
+    cards: { format: 'task', purpose: 'practice', count: 4, perPage: 'auto', work: 'individual', kind: 'consolidate', teacherAnswers: true },
+  }
+}
+
+/** Дополняет сохранённые параметры новыми полями по умолчанию (старые черновики). */
+export function mergeModeParams(p?: Partial<ModeParams>): ModeParams {
+  const d = defaultModeParams()
+  return {
+    assessment: { ...d.assessment, ...(p?.assessment ?? {}) },
+    differentiated: { ...d.differentiated, ...(p?.differentiated ?? {}) },
+    cards: { ...d.cards, ...(p?.cards ?? {}) },
   }
 }
 
@@ -490,7 +507,7 @@ export function migrateWorksheetDraft(raw: Record<string, unknown>): WorksheetDr
     taskPlan,
     generationBaseline: generationBaseline ?? draft.generationBaseline,
     materialType: draft.materialType ?? 'worksheet',
-    modeParams: { ...defaultModeParams(), ...(draft.modeParams ?? {}) },
+    modeParams: mergeModeParams(draft.modeParams),
     groups: draft.groups ?? [],
     print: { audience: 'student', groupFilter: 'all', ...(draft.print ?? { answersSeparate: false, copies: 1, orientation: 'portrait' }) },
   }

@@ -120,6 +120,9 @@ interface WorksheetScreenProps {
   onSoon?: (message: string) => void
   onReplaceBlock?: (id: string) => void
   groupTabs?: { id: string; label: string }[]
+  /** Режим карточек: «Создать ещё» — новая карточка того же назначения. */
+  onAnotherCard?: () => void
+  anotherCardBusy?: boolean
   activeGroupId?: string | null
   onGroupChange?: (id: string) => void
 }
@@ -158,6 +161,8 @@ export function WorksheetScreen({
   onSoon,
   onReplaceBlock,
   groupTabs,
+  onAnotherCard,
+  anotherCardBusy,
   activeGroupId,
   onGroupChange,
 }: WorksheetScreenProps) {
@@ -356,6 +361,13 @@ export function WorksheetScreen({
       {!isEdit ? (
         <div className={`ws-audience-note ${showAnswers ? 'teacher' : ''}`} role="note">
           {showAnswers ? 'Версия для учителя — с ответами' : 'Версия для ученика — без ответов'}
+        </div>
+      ) : null}
+      {onAnotherCard ? (
+        <div className="ws-another-card">
+          <Button variant="secondary" size="sm" type="button" disabled={anotherCardBusy} onClick={onAnotherCard}>
+            {anotherCardBusy ? 'Создаём карточку…' : 'Создать ещё карточку'}
+          </Button>
         </div>
       ) : null}
 

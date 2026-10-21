@@ -1,7 +1,7 @@
 import { generateWorksheetAI, type GenerateMode } from './ai'
 import { verifiedAnswer } from './fractionCheck'
 import { reportStage, throwIfCancelled } from './generationControl'
-import { groupsForMode, levelToStars, materialTypeOf, modeParamsOf, taskCountForMode, LEVEL_LABELS } from './materialModes'
+import { groupsForMode, levelToStars, materialTypeOf, modeParamsOf, taskCountForMode, LEVEL_LABELS, CARD_KIND_LABELS, stripCardHeading } from './materialModes'
 import type { DiffLevel, WorksheetBlock, WorksheetDraft } from './worksheet'
 import { createPlan } from './worksheet'
 
@@ -35,12 +35,19 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           : draft
     const result = await generateWorksheetAI(base, mode)
     const points = type === 'assessment' && params.assessment.grading === 'points'
+    let cardN = 0
+    const cardTitle = (b: WorksheetBlock): WorksheetBlock =>
+      type === 'cards' && b.type !== 'page_break' && b.type !== 'text'
+        ? { ...b, question: stripCardHeading(b.question), title: `Карточка ${++cardN}. ${CARD_KIND_LABELS[params.cards.kind]}` }
+        : b
     return {
       ...result,
       materialType: type,
       modeParams: params,
       groups: [],
-      blocks: verifyBlockAnswers(result.blocks).map((b) => (points && !b.points ? { ...b, points: b.difficulty ?? 1 } : b)),
+      blocks: verifyBlockAnswers(result.blocks)
+        .map((b) => (points && !b.points ? { ...b, points: b.difficulty ?? 1 } : b))
+        .map(cardTitle),
     }
   }
 
@@ -65,6 +72,12 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
     } else {
       const level = g.id.replace('level-', '') as DiffLevel
       const count = taskCountForMode(draft)
+      const versions = params.differentiated.format === 'versions'
+      const firstTask = allBlocks.find((b) => b.question || b.body)
+      const versionNote =
+        versions && firstTask
+          ? ` Это версия той же учебной задачи, что и в базовом уровне: «${(firstTask.question || firstTask.body || '').slice(0, 400)}». Проверяй тот же учебный результат; меняй степень самостоятельности и характер рассуждения, а не только данные.`
+          : ''
       part = withWish(
         {
           ...draft,
@@ -72,7 +85,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           taskCount: count,
           taskPlan: createPlan(count).map((row) => ({ ...row, difficulty: LEVEL_TO_PLAN[level] })),
         },
-        `Уровень: ${LEVEL_LABELS[level]}.`,
+        `Уровень: ${LEVEL_LABELS[level]}.${versionNote}`,
       )
     }
     reportStage('tasks')

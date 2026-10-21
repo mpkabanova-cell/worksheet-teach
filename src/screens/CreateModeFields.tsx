@@ -2,9 +2,8 @@ import { Field, Input, Select } from '@/components/ui'
 import type { DiffLevel, MaterialType, ModeParams } from '@/data/worksheet'
 import {
   ASSESSMENT_KIND_LABELS,
-  CARD_FORMAT_LABELS,
-  CARD_PURPOSE_LABELS,
-  CARD_WORK_LABELS,
+  CARD_KIND_LABELS,
+  DIFF_FORMAT_LABELS,
   LEVEL_LABELS,
   suggestTaskCountForMinutes,
 } from '@/data/materialModes'
@@ -107,38 +106,16 @@ export function ModeFields({ materialType, params, setParams, onTaskCount }: Pro
             </label>
           ))}
         </fieldset>
-        <div className="row-2">
-          <Field label="Заданий на уровень">
-            <Select
-              options={['1', '2', '3', '4', '5']}
-              value={String(d.perLevel)}
-              onChange={(e) => setParams('differentiated', { perLevel: Number(e.target.value) || 1 })}
-            />
-          </Field>
-          <Field label="Форма выдачи">
-            <LabelSelect
-              labels={{ sets: 'Отдельные комплекты', shared: 'Общий набор' }}
-              value={d.delivery}
-              onChange={(delivery) => setParams('differentiated', { delivery })}
-            />
-          </Field>
-        </div>
-        <Field label="Учебное умение (необязательно)">
-          <Input
-            placeholder="Например: сложение дробей с разными знаменателями"
-            value={d.skill}
-            maxLength={200}
-            onChange={(e) => setParams('differentiated', { skill: e.target.value })}
+        <Field label="Формат">
+          <LabelSelect
+            labels={DIFF_FORMAT_LABELS}
+            value={d.format}
+            onChange={(format) => setParams('differentiated', { format })}
           />
         </Field>
-        <label className="mode-check">
-          <input
-            type="checkbox"
-            checked={d.printLevelNames}
-            onChange={(e) => setParams('differentiated', { printLevelNames: e.target.checked })}
-          />
-          Печатать названия уровней для учеников
-        </label>
+        <p className="mode-hint">
+          Уровни различаются характером работы ученика, а не размером чисел или длиной текста.
+        </p>
         {d.levels.length === 0 ? <p className="mode-hint mode-hint--error">Выберите хотя бы один уровень.</p> : null}
       </div>
     )
@@ -149,34 +126,25 @@ export function ModeFields({ materialType, params, setParams, onTaskCount }: Pro
     return (
       <div className="mode-fields">
         <div className="row-2">
-          <Field label="Формат">
-            <LabelSelect labels={CARD_FORMAT_LABELS} value={c.format} onChange={(format) => setParams('cards', { format })} />
+          <Field label="Тип карточки">
+            <LabelSelect labels={CARD_KIND_LABELS} value={c.kind} onChange={(kind) => setParams('cards', { kind })} />
           </Field>
-          <Field label="Назначение">
-            <LabelSelect labels={CARD_PURPOSE_LABELS} value={c.purpose} onChange={(purpose) => setParams('cards', { purpose })} />
-          </Field>
-        </div>
-        <div className="row-3">
-          <Field label="Разных карточек">
+          <Field label="Количество карточек">
             <Select
               options={['1', '2', '3', '4', '6', '8']}
               value={String(c.count)}
               onChange={(e) => setParams('cards', { count: Number(e.target.value) || 1 })}
             />
           </Field>
-          <Field label="На листе A4">
-            <LabelSelect
-              labels={{ auto: 'Авто', '2': 'По 2', '4': 'По 4' }}
-              value={c.perPage}
-              onChange={(perPage) => setParams('cards', { perPage })}
-            />
-          </Field>
-          {c.format === 'handout' ? (
-            <Field label="Работа">
-              <LabelSelect labels={CARD_WORK_LABELS} value={c.work} onChange={(work) => setParams('cards', { work })} />
-            </Field>
-          ) : null}
         </div>
+        <label className="mode-check">
+          <input
+            type="checkbox"
+            checked={c.teacherAnswers}
+            onChange={(e) => setParams('cards', { teacherAnswers: e.target.checked })}
+          />
+          Ответы для учителя
+        </label>
         <p className="mode-hint">Количество печатных копий выбирается позже, при печати.</p>
       </div>
     )
