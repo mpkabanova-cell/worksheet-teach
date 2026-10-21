@@ -4,6 +4,7 @@ import { GRADES, SUBJECTS, breadcrumbLabel, formatSavedAgo, sheetTopicLabel } fr
 import { countTaskBlocksBefore, reconcileAnswerBlockStyle } from '@/data/blockUtils'
 import { Button, FigmaIcon, Icon, Select } from '@/components/ui'
 import { BlockCard } from '@/screens/worksheet/BlockCard'
+import { GradingPanel } from '@/screens/worksheet/GradingPanel'
 import { AnswerTaskSettingsPanel, BlockEditorPanel, ChoiceTaskSettingsPanel, FillGapsTaskSettingsPanel, MatchingTaskSettingsPanel, OrderingTaskSettingsPanel } from '@/screens/worksheet/blockEditors'
 import pageAddIcon from '@/assets/worksheet/tools/page-add.svg'
 import toolText from '@/assets/worksheet/tools/tool-text.svg'
@@ -41,13 +42,13 @@ const TOOL_SECTIONS: {
   {
     title: 'Готовые блоки',
     items: [
-      { type: 'short_answer', label: 'Ввод ответа', icon: toolShortAnswer },
-      { type: 'single_choice', label: 'Одиночный выбор', icon: toolSingleChoice },
-      { type: 'multiple_choice', label: 'Множественный выбор', icon: toolMultipleChoice },
+      { type: 'short_answer', label: 'Задание с ответом', icon: toolShortAnswer },
+      { type: 'single_choice', label: 'Выбор одного ответа', icon: toolSingleChoice },
+      { type: 'multiple_choice', label: 'Выбор нескольких ответов', icon: toolMultipleChoice },
       { type: 'fill_gaps', label: 'Заполнение пропусков', icon: toolFillGaps },
-      { type: 'matching', label: 'Сопоставление', icon: toolMatching },
-      { type: 'ordering', label: 'Упорядочивание', icon: toolOrdering },
-      { type: 'grouping', label: 'Группировка', icon: toolTable },
+      { type: 'matching', label: 'Установление соответствия', icon: toolMatching },
+      { type: 'ordering', label: 'Установление последовательности', icon: toolOrdering },
+      { type: 'grouping', label: 'Распределение по группам', icon: toolTable },
     ],
   },
   {
@@ -300,11 +301,11 @@ export function WorksheetScreen({
             <span className="current">{materialTitle}</span>
           </nav>
           <span className="ws-saved" role="status">
-            {draft.savedAt ? formatSavedAgo(draft.savedAt) : 'Черновик сохранён в браузере'}
+            {draft.savedAt ? 'Материал сохранён' : 'Черновик сохранён в этом браузере'}
           </span>
           {onSave ? (
             <button type="button" className="ws-save-link" onClick={onSave}>
-              {draft.savedAt ? 'Сохранить ещё раз' : 'Сохранить в материалы'}
+              {draft.savedAt ? 'Сохранить изменения' : 'Сохранить в материалы'}
             </button>
           ) : null}
         </div>
@@ -359,8 +360,29 @@ export function WorksheetScreen({
         </div>
       ) : null}
       {!isEdit ? (
-        <div className={`ws-audience-note ${showAnswers ? 'teacher' : ''}`} role="note">
-          {showAnswers ? 'Версия для учителя — с ответами' : 'Версия для ученика — без ответов'}
+        <div className="ws-audience-switch" role="tablist" aria-label="Версия материала">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!showAnswers}
+            className={showAnswers ? '' : 'active'}
+            onClick={() => {
+              if (showAnswers) onChangeDraft?.({ ...draft, showAnswers: false })
+            }}
+          >
+            Для ученика
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={showAnswers}
+            className={showAnswers ? 'active' : ''}
+            onClick={() => {
+              if (!showAnswers) onChangeDraft?.({ ...draft, showAnswers: true })
+            }}
+          >
+            Ответы и оценивание
+          </button>
         </div>
       ) : null}
       {onAnotherCard ? (
@@ -533,6 +555,9 @@ export function WorksheetScreen({
                 {currentPage + 1}
               </div>
             ) : null}
+            {showAnswers && draft.materialType === 'assessment' ? (
+              <GradingPanel draft={draft} onChangeDraft={onChangeDraft} />
+            ) : null}
           </div>
         </main>
 
@@ -582,10 +607,10 @@ export function WorksheetScreen({
                     />
                   </label>
                   <label className="side-field">
-                    <span>Параллель</span>
+                    <span>Класс</span>
                     <Select
                       options={GRADES}
-                      placeholder="Выберите параллель"
+                      placeholder="Выберите класс"
                       value={draft.grade}
                       onChange={(e) => onChangeDraft?.({ ...draft, grade: e.target.value })}
                     />

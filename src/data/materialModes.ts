@@ -57,10 +57,10 @@ export const DIFF_FORMAT_LABELS: Record<DiffFormat, string> = {
 }
 
 export const CARD_KIND_LABELS: Record<CardKind, string> = {
-  consolidate: 'Закрепление',
-  support: 'Нужна опора',
-  apply: 'Самостоятельное применение',
-  extra: 'Дополнительная задача',
+  consolidate: 'Отработка навыка',
+  support: 'Карточка с подсказкой',
+  apply: 'Применение без подсказок',
+  extra: 'Задание на перенос знаний',
 }
 
 /** Общая продуктовая логика из документа с промптами. */
@@ -144,7 +144,7 @@ export function modePromptRules(draft: WorksheetDraft): string {
 - Объём соразмерен ${a.minutes} минутам для ученика ${draft.grade || ''} класса.
 - Контрольная — не удлинённая самостоятельная: больше умений и их сочетание, а не больше однотипных примеров.
 - Если указан вариант — у соответствующих позиций совпадают умение, тип рассуждения, уровень, число шагов; различаются только данные. Не допускай более лёгкого случая, отрицательного результата вне изученного или несопоставимых вычислений.
-${a.grading === 'points' ? '- Для каждого задания укажи в explanation решение и критерии: «Баллы: N. Критерии: …».' : ''}`
+${a.grading !== 'none' ? '- Для каждого задания укажи в explanation решение и критерии по баллам: «Баллы: N. Критерии: …» — за что даётся каждый балл, допустимые альтернативы и типичные ошибки.' : ''}`
   }
   if (type === 'differentiated') {
     return differentiatedPrompt(draft, p.differentiated.format)
@@ -260,6 +260,40 @@ export function replaceBlockKeepingSlot(
         }
       : b,
   )
+}
+
+/** Краткий текст правильного ответа блока для учительской таблицы. */
+export function blockAnswerText(b: WorksheetBlock): string {
+  if (b.type === 'single_choice') {
+    const opt = b.options?.find((o) => o.id === b.correctOptionId)
+    return opt?.text ?? ''
+  }
+  if (b.type === 'multiple_choice') {
+    const ids = new Set(b.correctOptionIds ?? [])
+    return (b.options ?? []).filter((o) => ids.has(o.id)).map((o) => o.text).join('; ')
+  }
+  if (b.type === 'fill_gaps') return (b.gapsAnswers ?? []).join('; ')
+  if (b.type === 'matching') {
+    const right = new Map((b.rightItems ?? []).map((r) => [r.id, r.text]))
+    return (b.leftItems ?? [])
+      .map((l) => `${l.text} — ${right.get(l.id) ?? '?'}`)
+      .join('; ')
+  }
+  if (b.type === 'ordering') return (b.orderItems ?? []).join(' → ')
+  return (b.correctAnswers ?? []).join('; ')
+}
+
+/** Убирает из решения строку «Ответ: …», если она дублирует уже показанный ключ. */
+export function stripDuplicateAnswer(solution: string | undefined, answerText: string): string | undefined {
+  if (!solution) return solution
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+  const answer = norm(answerText)
+  if (!answer) return solution
+  const lines = solution.split('\n').filter((line) => {
+    const t = norm(line.replace(/^ответ\s*:\s*/i, ''))
+    return !(t && t === answer)
+  })
+  return lines.join('\n')
 }
 
 /** Убирает заголовок «Карточка N. …», если модель вписала его в текст. */

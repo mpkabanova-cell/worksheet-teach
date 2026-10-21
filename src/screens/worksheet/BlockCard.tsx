@@ -8,6 +8,7 @@ import {
   getGapsSourceText,
   getGapsStudentText,
   getGapsDisplayAnswers,
+  getDisplayAnswerText,
   getValidGapAnswers,
   getOrderAnswerNumbers,
   getOrderDisplayItems,
@@ -19,6 +20,7 @@ import {
   TEXT_BODY_MAX_LENGTH,
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
+import { stripDuplicateAnswer } from '@/data/materialModes'
 import { MathText } from '@/components/MathText'
 import { WysiwygTextarea } from '@/components/WysiwygTextarea'
 import { FigmaIcon } from '@/components/ui'
@@ -402,7 +404,9 @@ export function BlockCard({
           <div className="ws-teacher-key" aria-label="Для учителя">
             {block.points ? <span>Баллы: {block.points}</span> : null}
             {block.criteria ? <span>Критерии: {block.criteria}</span> : null}
-            {block.solution ? <MathText text={`Решение: ${block.solution}`} as="span" /> : null}
+            {block.solution ? (
+              <MathText text={`Решение: ${stripDuplicateAnswer(block.solution, getDisplayAnswerText(block)) ?? ''}`} as="span" />
+            ) : null}
           </div>
         ) : null}
 

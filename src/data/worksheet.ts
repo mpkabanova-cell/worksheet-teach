@@ -155,6 +155,48 @@ export interface WorksheetBlock {
   /** Баллы и критерии (только учительская версия). */
   points?: number
   criteria?: string
+  /** Ключ/критерии требуют проверки учителем (после ручной правки или конфликта вариантов). */
+  criteriaStatus?: 'ok' | 'needs-review'
+}
+
+/** Отметка за работу по шкале баллов. */
+export interface GradeThreshold {
+  grade: '5' | '4' | '3' | '2'
+  min: number
+}
+
+/** Шкала перевода баллов в отметку; пороги не пересекаются и идут по убыванию. */
+export function defaultGradeScale(maxPoints: number): GradeThreshold[] {
+  return [
+    { grade: '5', min: Math.ceil(maxPoints * 0.85) },
+    { grade: '4', min: Math.ceil(maxPoints * 0.65) },
+    { grade: '3', min: Math.ceil(maxPoints * 0.45) },
+    { grade: '2', min: 0 },
+  ]
+}
+
+/** Отметка по шкале; null — баллы вне диапазона. */
+export function gradeForPoints(points: number, scale: GradeThreshold[]): string | null {
+  if (points < 0) return null
+  const sorted = [...scale].sort((a, b) => b.min - a.min)
+  for (const t of sorted) {
+    if (points >= t.min) return t.grade
+  }
+  return null
+}
+
+/** Шкала корректна: пороги неотрицательны и строго убывают для 5→2. */
+export function isValidGradeScale(scale: GradeThreshold[]): boolean {
+  if (scale.length !== 4) return false
+  const order: GradeThreshold['grade'][] = ['5', '4', '3', '2']
+  const byGrade = new Map(scale.map((t) => [t.grade, t.min]))
+  let prev = Infinity
+  for (const g of order) {
+    const min = byGrade.get(g)
+    if (min == null || min < 0 || min >= prev) return false
+    prev = min
+  }
+  return true
 }
 
 export interface PlanTask {
@@ -185,8 +227,8 @@ export type MaterialType = 'worksheet' | 'assessment' | 'differentiated' | 'card
 
 export const MATERIAL_TYPES: { type: MaterialType; label: string }[] = [
   { type: 'worksheet', label: 'Рабочий лист' },
-  { type: 'assessment', label: 'Работа для проверки' },
-  { type: 'differentiated', label: 'Дифференцированные задания' },
+  { type: 'assessment', label: 'Проверочные и контрольные работы' },
+  { type: 'differentiated', label: 'Задания по уровням' },
   { type: 'cards', label: 'Карточки и раздаточные материалы' },
 ]
 
@@ -202,7 +244,10 @@ export interface ModeParams {
     minutes: number
     variants: number
     skills: string
-    grading: 'none' | 'points'
+    /** none — без отметки; points — баллы и критерии; grade — баллы, критерии и отметка по шкале. */
+    grading: 'none' | 'points' | 'grade'
+    /** Редактируемая шкала перевода баллов в отметку (при grading = 'grade'). */
+    gradeScale?: GradeThreshold[]
   }
   differentiated: {
     levels: DiffLevel[]
@@ -345,18 +390,18 @@ export const TASK_TYPE_META: {
   hint: string
   category: 'task' | 'element'
 }[] = [
-  { type: 'short_answer', label: 'Краткий ответ', hint: 'Факт, термин, вычисление', category: 'task' },
-  { type: 'single_choice', label: 'Один вариант ответа', hint: 'Выбор одного ответа', category: 'task' },
+  { type: 'short_answer', label: 'Задание с ответом', hint: 'Факт, термин, вычисление', category: 'task' },
+  { type: 'single_choice', label: 'Выбор одного ответа', hint: 'Один правильный вариант', category: 'task' },
   {
     type: 'multiple_choice',
-    label: 'Несколько вариантов',
-    hint: 'Выбор нескольких ответов',
+    label: 'Выбор нескольких ответов',
+    hint: 'Несколько правильных вариантов',
     category: 'task',
   },
   { type: 'fill_gaps', label: 'Заполнение пропусков', hint: 'Текст с пропусками', category: 'task' },
-  { type: 'matching', label: 'Сопоставление', hint: 'Соединить пары', category: 'task' },
-  { type: 'grouping', label: 'Группировка', hint: 'Классификация по признаку', category: 'task' },
-  { type: 'ordering', label: 'Упорядочивание', hint: 'Восстановить порядок', category: 'task' },
+  { type: 'matching', label: 'Установление соответствия', hint: 'Соединить пары', category: 'task' },
+  { type: 'grouping', label: 'Распределение по группам', hint: 'Классификация по признаку', category: 'task' },
+  { type: 'ordering', label: 'Установление последовательности', hint: 'Восстановить порядок', category: 'task' },
   {
     type: 'extended_answer',
     label: 'Развёрнутый ответ',
@@ -372,7 +417,7 @@ export const TASK_TYPE_META: {
 export const PLAN_TASK_TYPES = TASK_TYPE_META.filter((t) => t.category === 'task')
 
 export const DIFFICULTY_OPTIONS: { value: DifficultyMode; label: string }[] = [
-  { value: 'differentiated', label: 'Дифференцированная' },
+  { value: 'differentiated', label: 'Разные уровни' },
   { value: 'basic', label: 'Базовая' },
   { value: 'medium', label: 'Средняя' },
   { value: 'advanced', label: 'Повышенная' },

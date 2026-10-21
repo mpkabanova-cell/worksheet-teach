@@ -4,6 +4,8 @@ import { Sidebar } from '@/components/Sidebar'
 import { generateSingleTaskAI } from '@/data/ai'
 import { generateMaterialAI, verifyBlockAnswers } from '@/data/materialGeneration'
 import { GenerationCancelled, runGeneration, type GenerationStage } from '@/data/generationControl'
+
+const GEN_STAGE_ORDER: GenerationStage[] = ['plan', 'tasks', 'check', 'finalize']
 import { anotherCardNote, CARD_KIND_LABELS, stripCardHeading, draftForExport, materialTypeOf, modeParamsOf, replaceBlockKeepingSlot } from '@/data/materialModes'
 import type { GenerateMode } from '@/data/ai'
 import {
@@ -45,8 +47,14 @@ function demoDraft(): WorksheetDraft {
   })
 }
 
-const PENDING_KEY = 'ws-pending-generation'
-const AUTOSAVE_KEY = 'ws-autosave-draft'
+import {
+  clearAutosave,
+  clearPending,
+  rememberTabDraft,
+  restoreForTab,
+  saveAutosave,
+  savePending,
+} from '@/data/draftPersistence'
 
 const SHELL_SCREENS: Screen[] = ['home', 'worksheets-list', 'coming-soon']
 
@@ -162,7 +170,8 @@ export default function App() {
     const mode = generateModeRef.current
     setGenStage(null)
     try {
-      localStorage.setItem(PENDING_KEY, JSON.stringify({ draft: draftRef.current, mode }))
+      rememberTabDraft(sessionStorage, draftRef.current.id)
+      savePending(localStorage, draftRef.current.id, { draft: draftRef.current, mode })
     } catch {
       /* storage full */
     }
@@ -172,11 +181,16 @@ export default function App() {
         const next = await runGeneration(() => generateMaterialAI(draftRef.current, mode), {
           signal: controller.signal,
           onStage: (st) => {
-            if (!controller.signal.aborted) setGenStage(st)
+            if (controller.signal.aborted) return
+            // Индикатор этапов не откатывается назад при повторных попытках.
+            setGenStage((prev) => {
+              if (!prev) return st
+              return GEN_STAGE_ORDER.indexOf(st) >= GEN_STAGE_ORDER.indexOf(prev) ? st : prev
+            })
           },
         })
         if (controller.signal.aborted) return
-        localStorage.removeItem(PENDING_KEY)
+        clearPending(localStorage, draftRef.current.id)
         setDraft(syncPagesFromBreaks(next))
         setActiveGroupId(next.groups?.[0]?.id ?? null)
         setPendingGenerate(false)
@@ -199,7 +213,7 @@ export default function App() {
 
   const cancelGeneration = () => {
     genAbortRef.current?.abort()
-    localStorage.removeItem(PENDING_KEY)
+    clearPending(localStorage, draftRef.current.id)
     setGenError(null)
     setPendingGenerate(false)
     if (generateModeRef.current === 'regenerate') setScreen('edit')
@@ -217,7 +231,7 @@ export default function App() {
   }
 
   const backToFormFromError = () => {
-    localStorage.removeItem(PENDING_KEY)
+    clearPending(localStorage, draftRef.current.id)
     setGenError(null)
     if (generateModeRef.current === 'regenerate') setScreen('edit')
     else {
@@ -226,12 +240,12 @@ export default function App() {
     }
   }
 
-  // Восстановление после обновления страницы
+  // Восстановление после обновления страницы — только документ этой вкладки
   useEffect(() => {
     try {
-      const pending = localStorage.getItem(PENDING_KEY)
-      if (pending) {
-        const parsed = JSON.parse(pending) as { draft: Record<string, unknown>; mode: GenerateMode }
+      const found = restoreForTab(localStorage, sessionStorage)
+      if (found.kind === 'pending-own') {
+        const parsed = JSON.parse(found.payload) as { draft: Record<string, unknown>; mode: GenerateMode }
         setDraftState(migrateWorksheetDraft(parsed.draft))
         setGenerateMode(parsed.mode)
         generateModeRef.current = parsed.mode
@@ -239,9 +253,12 @@ export default function App() {
         setScreen('loader')
         return
       }
-      const auto = localStorage.getItem(AUTOSAVE_KEY)
-      if (auto) {
-        const parsed = JSON.parse(auto) as { draft: Record<string, unknown> }
+      if (found.kind === 'pending-foreign') {
+        showToast('В другой вкладке создаётся материал — этот документ не тронут')
+        return
+      }
+      if (found.kind === 'autosave') {
+        const parsed = JSON.parse(found.payload) as { draft: Record<string, unknown> }
         const restored = normalizeWorksheetDraft(migrateWorksheetDraft(parsed.draft))
         if (restored.blocks.length) {
           setDraftState(restored)
@@ -256,12 +273,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Автосохранение черновика в браузере, пока открыт редактор
+  // Автосохранение черновика в браузере, пока открыт редактор — под ключом с id документа
   useEffect(() => {
     const inEditor = ['edit', 'edit-widget', 'add-block', 'preview', 'show-answers', 'print'].includes(screen)
     try {
-      if (inEditor) localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ draft }))
-      else if (screen === 'home' || screen === 'worksheets-list') localStorage.removeItem(AUTOSAVE_KEY)
+      if (inEditor) {
+        rememberTabDraft(sessionStorage, draft.id)
+        saveAutosave(localStorage, draft.id, { draft })
+      } else if (screen === 'home' || screen === 'worksheets-list') {
+        clearAutosave(localStorage, draft.id)
+      }
     } catch {
       /* storage full */
     }
@@ -322,7 +343,20 @@ export default function App() {
   const updateBlock = (block: WorksheetBlock) => {
     setDraft((d) => ({
       ...d,
-      blocks: d.blocks.map((b) => (b.id === block.id ? block : b)),
+      blocks: d.blocks.map((b) => {
+        if (b.id !== block.id) return b
+        // Ручная правка условия или ответа — ключ и критерии надо перепроверить.
+        const contentChanged =
+          b.question !== block.question ||
+          b.body !== block.body ||
+          JSON.stringify(b.correctAnswers) !== JSON.stringify(block.correctAnswers) ||
+          b.correctOptionId !== block.correctOptionId ||
+          JSON.stringify(b.correctOptionIds) !== JSON.stringify(block.correctOptionIds) ||
+          JSON.stringify(b.gapsAnswers) !== JSON.stringify(block.gapsAnswers)
+        return contentChanged && (b.points != null || b.criteria)
+          ? { ...block, criteriaStatus: 'needs-review' as const }
+          : block
+      }),
     }))
   }
 
@@ -753,7 +787,7 @@ export default function App() {
           }
           onHome={() => {
             genAbortRef.current?.abort()
-            localStorage.removeItem(PENDING_KEY)
+            clearPending(localStorage, draftRef.current.id)
             setGenError(null)
             setScreen('home')
           }}

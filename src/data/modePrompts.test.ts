@@ -22,7 +22,7 @@ describe('режимы из документа с промптами', () => {
     const d = differentiatedPrompt(base, 'levels')
     expect(d).toContain('Тема урока: Сложение дробей')
     expect(d).toContain('не упоминай нормативные документы')
-    expect(cardsPrompt(base, 'support', 4)).toContain('Тип карточки: Нужна опора')
+    expect(cardsPrompt(base, 'support', 4)).toContain('Тип карточки: Карточка с подсказкой')
   })
 })
 

@@ -20,6 +20,7 @@ import { resizePlanToTaskCount, withGenerationBaseline } from '@/data/taskPlanOr
 import type { DifficultyMode, WorksheetDraft } from '@/data/worksheet'
 import {
   ADDITIONAL_WISHES_MAX_LENGTH,
+  createPlan,
   DIFFICULTY_OPTIONS,
   GRADES,
   SUBJECTS,
@@ -28,7 +29,7 @@ import {
   USER_DESCRIPTION_MAX_LENGTH,
 } from '@/data/worksheet'
 import { MATERIAL_TYPES, type ModeParams } from '@/data/worksheet'
-import { MATERIAL_FORM_TITLE, materialTypeOf, modeParamsOf } from '@/data/materialModes'
+import { MATERIAL_FORM_TITLE, materialTypeOf, modeParamsOf, taskCountForMode } from '@/data/materialModes'
 import { ModeFields } from './CreateModeFields'
 import './Create.css'
 
@@ -305,14 +306,21 @@ export function Create({
           <div className="create-form">
             <div className="create-form-scroll">
             <div className="create-main">
-              {isGenerateLike ? (
+              {isGenerateLike || mode === 'manual' ? (
                 <Field label="Тип материала">
                   <Select
                     options={MATERIAL_TYPES.map((m) => m.label)}
                     value={MATERIAL_TYPES.find((m) => m.type === materialType)?.label}
                     onChange={(e) => {
                       const found = MATERIAL_TYPES.find((m) => m.label === e.target.value)
-                      if (found) onChange((prev) => ({ ...prev, materialType: found.type }))
+                      if (found)
+                        onChange((prev) => {
+                          const next = { ...prev, materialType: found.type }
+                          // План пересоздаётся под число заданий нового режима.
+                          const keepsCount = found.type === 'worksheet' || found.type === 'assessment'
+                          const count = keepsCount ? next.taskCount : taskCountForMode(next)
+                          return { ...next, taskCount: count, taskPlan: createPlan(count) }
+                        })
                     }}
                   />
                 </Field>
@@ -326,10 +334,10 @@ export function Create({
                     onChange={(e) => onChange({ ...draft, subject: e.target.value })}
                   />
                 </Field>
-                <Field label="Параллель" required>
+                <Field label="Класс" required>
                   <Select
                     options={GRADES}
-                    placeholder="Выберите параллель"
+                    placeholder="Выберите класс"
                     value={draft.grade}
                     onChange={(e) => onChange({ ...draft, grade: e.target.value })}
                   />
