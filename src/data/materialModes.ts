@@ -262,6 +262,27 @@ export function replaceBlockKeepingSlot(
   )
 }
 
+/** Краткий текст правильного ответа блока для учительской таблицы. */
+export function blockAnswerText(b: WorksheetBlock): string {
+  if (b.type === 'single_choice') {
+    const opt = b.options?.find((o) => o.id === b.correctOptionId)
+    return opt?.text ?? ''
+  }
+  if (b.type === 'multiple_choice') {
+    const ids = new Set(b.correctOptionIds ?? [])
+    return (b.options ?? []).filter((o) => ids.has(o.id)).map((o) => o.text).join('; ')
+  }
+  if (b.type === 'fill_gaps') return (b.gapsAnswers ?? []).join('; ')
+  if (b.type === 'matching') {
+    const right = new Map((b.rightItems ?? []).map((r) => [r.id, r.text]))
+    return (b.leftItems ?? [])
+      .map((l) => `${l.text} — ${right.get(l.id) ?? '?'}`)
+      .join('; ')
+  }
+  if (b.type === 'ordering') return (b.orderItems ?? []).join(' → ')
+  return (b.correctAnswers ?? []).join('; ')
+}
+
 /** Убирает заголовок «Карточка N. …», если модель вписала его в текст. */
 export function stripCardHeading(text?: string): string | undefined {
   if (!text) return text
