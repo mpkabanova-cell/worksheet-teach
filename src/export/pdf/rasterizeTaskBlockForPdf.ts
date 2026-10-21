@@ -292,6 +292,7 @@ export async function rasterizeTaskBlockForPdf(
   root.appendChild(headRow)
 
   const slot = createTaskSlot()
+  let beforeCapture: (() => void) | undefined
 
   if (isChoiceBlock(block) && (block.choiceOptionFormat ?? 'text') === 'text') {
     let options = getChoiceDisplayOptions(block, false, false)
@@ -328,7 +329,7 @@ export async function rasterizeTaskBlockForPdf(
   }
 
   if (block.type === 'matching') {
-    appendMatchingWidget(slot, block, showAnswer)
+    beforeCapture = appendMatchingWidget(slot, block, showAnswer)
   } else if (block.type === 'ordering') {
     appendOrderingWidget(slot, block, showAnswer)
   } else if (block.type === 'grouping' || block.type === 'table') {
@@ -373,7 +374,7 @@ export async function rasterizeTaskBlockForPdf(
     }
   }
 
-  return captureDomToPng(root, `pdf-task-${block.id}-${showAnswer ? 'a' : 's'}`, ctx, undefined, {
+  return captureDomToPng(root, `pdf-task-${block.id}-${showAnswer ? 'a' : 's'}`, ctx, beforeCapture, {
     fitContent: false,
     pixelRatio: PDF_DOM_CAPTURE_PIXEL_RATIO,
   })

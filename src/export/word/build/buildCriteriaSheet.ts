@@ -19,7 +19,7 @@ import {
 const border = { style: BorderStyle.SINGLE, size: 4, color: COLORS.borderSecondary }
 const borders = { top: border, bottom: border, left: border, right: border }
 const WIDTH = pxToDxa(SHEET_CONTENT_WIDTH_PX)
-const COLS = [500, 2700, 2300, 900, WIDTH - 6400]
+const COLS = [500, 2500, 2200, 1100, WIDTH - 6300]
 
 async function cell(text: string, width: number, ctx: ExportContext, bold = false): Promise<TableCell> {
   const lines = (text || '—').split('\n')
