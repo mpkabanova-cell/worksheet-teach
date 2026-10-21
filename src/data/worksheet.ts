@@ -416,7 +416,10 @@ export function emptyDraft(): WorksheetDraft {
     taskPlan: createPlan(5),
     blocks: [],
     pages: 1,
-    print: { answersSeparate: false, copies: 1, orientation: 'portrait' },
+    print: { answersSeparate: false, copies: 1, orientation: 'portrait', audience: 'student', groupFilter: 'all' },
+    materialType: 'worksheet',
+    modeParams: defaultModeParams(),
+    groups: [],
   }
 }
 
@@ -485,6 +488,10 @@ export function migrateWorksheetDraft(raw: Record<string, unknown>): WorksheetDr
     showIntro: Boolean(raw.showIntro ?? raw.addIntro ?? true),
     taskPlan,
     generationBaseline: generationBaseline ?? draft.generationBaseline,
+    materialType: draft.materialType ?? 'worksheet',
+    modeParams: { ...defaultModeParams(), ...(draft.modeParams ?? {}) },
+    groups: draft.groups ?? [],
+    print: { audience: 'student', groupFilter: 'all', ...(draft.print ?? { answersSeparate: false, copies: 1, orientation: 'portrait' }) },
   }
 }
 
