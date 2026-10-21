@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { emptyDraft, type WorksheetBlock } from '@/data/worksheet'
+import { emptyDraft, mergeModeParams, type WorksheetBlock } from '@/data/worksheet'
 import { draftForExport } from '@/data/materialModes'
 import { exportCriteriaSections, hasExportCriteria, teacherDetailLines } from './assessmentContent'
 import { buildWorksheetDocumentChildren } from './word/build/buildSheet'
@@ -17,7 +17,7 @@ const task = (id: string, groupId: string, page: number): WorksheetBlock => ({
   correctAnswers: ['6'], criteria: '1 балл — верный ответ. 0 баллов — неверный ответ.', solution: '2 × 3 = 6',
 })
 const draft = () => ({ ...emptyDraft(), materialType: 'assessment' as const, pages: 2,
-  modeParams: { ...emptyDraft().modeParams, assessment: { ...emptyDraft().modeParams?.assessment, grading: 'points' as const } },
+  modeParams: { ...mergeModeParams(), assessment: { ...mergeModeParams().assessment, grading: 'points' as const } },
   groups: [{ id: 'v1', label: 'Вариант 1', kind: 'variant' as const }, { id: 'v2', label: 'Вариант 2', kind: 'variant' as const }],
   blocks: [task('b', 'v1', 1), task('a', 'v1', 0), task('c', 'v2', 0)],
   print: { ...emptyDraft().print, audience: 'teacher' as const, groupFilter: 'v1' },
