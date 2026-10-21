@@ -18,6 +18,10 @@ describe('режимы из документа с промптами', () => {
     expect(p.differentiated.format).toBe('levels')
   })
 
+  it('оценивание по умолчанию — баллы, критерии и отметка', () => {
+    expect(mergeModeParams().assessment.grading).toBe('grade')
+  })
+
   it('промпты подставляют входные данные и не просят ссылок на ФГОС в материале', () => {
     const d = differentiatedPrompt(base, 'levels')
     expect(d).toContain('Тема урока: Сложение дробей')

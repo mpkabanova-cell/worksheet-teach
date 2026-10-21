@@ -283,7 +283,7 @@ export interface ModeParams {
 
 export function defaultModeParams(): ModeParams {
   return {
-    assessment: { kind: 'independent', minutes: 20, variants: 2, skills: '', grading: 'none' },
+    assessment: { kind: 'independent', minutes: 20, variants: 2, skills: '', grading: 'grade' },
     differentiated: { levels: ['basic', 'advanced', 'high'], perLevel: 2, skill: '', delivery: 'sets', printLevelNames: false, format: 'levels' },
     cards: { format: 'task', purpose: 'practice', count: 4, perPage: 'auto', work: 'individual', kind: 'consolidate', teacherAnswers: true },
   }
