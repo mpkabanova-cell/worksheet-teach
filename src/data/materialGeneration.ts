@@ -1,4 +1,5 @@
-import { generateWorksheetAI, type GenerateMode } from './ai'
+import { generateSingleTaskAI, generateWorksheetAI, type GenerateMode } from './ai'
+import { blockTaskText, findVariantIssues, looksLikePlanDescription } from './contentChecks'
 import { verifiedAnswer } from './fractionCheck'
 import { reportStage, throwIfCancelled } from './generationControl'
 import { groupsForMode, levelToStars, materialTypeOf, modeParamsOf, taskCountForMode, LEVEL_LABELS, CARD_KIND_LABELS, stripCardHeading } from './materialModes'
@@ -111,6 +112,10 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
   }
 
   reportStage('finalize')
+  const checked =
+    type === 'assessment'
+      ? await repairVariantIssues(draft, allBlocks, groups)
+      : await repairPlanDescriptions(draft, allBlocks)
   return {
     ...draft,
     title: title || draft.topic,
