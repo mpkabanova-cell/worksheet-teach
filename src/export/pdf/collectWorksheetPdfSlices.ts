@@ -5,6 +5,8 @@ import { rasterizeExportHeader, rasterizeRichTextBlock } from '@/export/pdf/rend
 import { rasterizeTaskBlockForPdf } from '@/export/pdf/rasterizeTaskBlockForPdf'
 import { LAYOUT, TYPO } from '@/export/word/layoutTokens'
 import type { ExportContext } from '@/export/word/types'
+import { hasExportCriteria } from '@/export/assessmentContent'
+import { collectCriteriaSlices } from './collectCriteriaSlices'
 
 function isNumberedTask(block: WorksheetBlock): boolean {
   return block.type !== 'page_break' && block.type !== 'text' && block.type !== 'answer_field'
@@ -19,7 +21,7 @@ async function collectPageBlockSlices(
   const slices: PdfSlice[] = []
 
   for (let index = 0; index < pageBlocks.length; index += 1) {
-    const block = pageBlocks[index]!
+    const block = pageBlocks[index]
     const showAnswer = showAnswerOverride ?? ctx.options.showAnswers
 
     if (block.type === 'page_break') {
@@ -37,10 +39,6 @@ async function collectPageBlockSlices(
       if (image) {
         slices.push({ kind: 'image', image, gapAfterPx: LAYOUT.taskGap })
       }
-      continue
-    }
-
-    if (block.type === 'answer_field') {
       continue
     }
 
@@ -87,7 +85,7 @@ export async function collectWorksheetPdfSlices(ctx: ExportContext): Promise<Pdf
 
   slices.push(...(await collectAllPageSlices(studentCtx, showAnswersInline)))
 
-  if (ctx.options.answersSeparate) {
+  if (ctx.options.showAnswers && ctx.options.answersSeparate) {
     slices.push({ kind: 'pageBreak' })
     const answersTitle = await rasterizeRichTextBlock(
       'Ответы',
@@ -104,6 +102,8 @@ export async function collectWorksheetPdfSlices(ctx: ExportContext): Promise<Pdf
     }
     slices.push(...(await collectAllPageSlices(answersCtx, true)))
   }
+
+  if (hasExportCriteria(ctx.draft, ctx.options.showAnswers)) slices.push(...await collectCriteriaSlices(ctx))
 
   return slices
 }

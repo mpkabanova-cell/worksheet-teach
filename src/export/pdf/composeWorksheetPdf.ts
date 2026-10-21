@@ -4,9 +4,9 @@ import type { PdfSlice } from '@/export/pdf/pdfSlice'
 import { SHEET_CONTENT_WIDTH_PX } from '@/export/word/layoutTokens'
 import { PAGE_MARGIN_TWIPS } from '@/export/word/build/buildHeader'
 
-/** twips → mm (1 twip = 1/567 inch × 25.4). */
+/** twips → mm (1440 twips = 1 inch). */
 function twipsToMm(twips: number): number {
-  return (twips / 567) * 25.4
+  return (twips / 1440) * 25.4
 }
 
 const MARGIN_MM = twipsToMm(PAGE_MARGIN_TWIPS)
@@ -37,7 +37,7 @@ export async function composeWorksheetPdf(
 
   for (const slice of slices) {
     if (slice.kind === 'pageBreak') {
-      startNewPage()
+      if (y > MARGIN_MM) startNewPage()
       continue
     }
 
@@ -46,11 +46,34 @@ export async function composeWorksheetPdf(
     const imgHeightMm = imgWidthMm * (image.height / Math.max(1, image.width))
     const gapMm = gapAfterPx * PX_TO_MM
 
-    if (y + imgHeightMm > pageHeight - MARGIN_MM) {
+    if (y + imgHeightMm > pageHeight - MARGIN_MM && y > MARGIN_MM) {
       startNewPage()
     }
 
     const imgData = pngBytesToDataUrl(image.data)
+    const maxHeight = pageHeight - MARGIN_MM * 2
+    if (imgHeightMm > maxHeight) {
+      const source = new Image()
+      source.src = imgData
+      await source.decode()
+      let offset = 0
+      const pixelsPerMm = source.height / imgHeightMm
+      while (offset < source.height) {
+        const height = Math.min(source.height - offset, Math.floor(maxHeight * pixelsPerMm))
+        const canvas = document.createElement('canvas')
+        canvas.width = source.width
+        canvas.height = height
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Не удалось подготовить страницу PDF')
+        context.drawImage(source, 0, offset, source.width, height, 0, 0, source.width, height)
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', MARGIN_MM, y, imgWidthMm, height / pixelsPerMm, undefined, 'SLOW')
+        offset += height
+        y += height / pixelsPerMm
+        if (offset < source.height) startNewPage()
+      }
+      y += gapMm
+      continue
+    }
     pdf.addImage(imgData, 'PNG', MARGIN_MM, y, imgWidthMm, imgHeightMm, undefined, 'SLOW')
     y += imgHeightMm + gapMm
   }
