@@ -525,7 +525,7 @@ export default function App() {
       const prevText = [prev.question, prev.body, prev.gapsSourceText].filter(Boolean).join('\n')
       const fresh = await runGeneration(() =>
         generateSingleTaskAI(d0, prev.type as Parameters<typeof generateSingleTaskAI>[1], anotherCardNote(prevText)),
-        {},
+        { signal: new AbortController().signal },
       )
       const [block] = verifyBlockAnswers([fresh])
       block.page = prev.page
