@@ -240,7 +240,7 @@ export function appendMatchingWidget(
   parent: HTMLElement,
   block: WorksheetBlock,
   showAnswer: boolean,
-): void {
+): () => void {
   const leftFormat = block.matchingLeftFormat ?? 'text'
   const rightFormat = block.matchingRightFormat ?? 'text'
   const right = getMatchingRightItems(block, false, false)
@@ -257,11 +257,13 @@ export function appendMatchingWidget(
     showAnswer,
     spec,
   )
-  if (showAnswer && links.length > 0) {
-    const matchLines = measureMatchLines(board, leftDots, rightDots, links)
-    addMatchLinesSvg(board, matchLines)
-  }
   parent.appendChild(board)
+  return () => {
+    if (showAnswer && links.length > 0) {
+      const matchLines = measureMatchLines(board, leftDots, rightDots, links)
+      addMatchLinesSvg(board, matchLines)
+    }
+  }
 }
 
 function buildMatchingBoard(

@@ -133,7 +133,6 @@ export async function captureDomToPng(
 
   await waitForLayout()
   await waitForImages(node)
-  beforeCapture?.(node)
 
   node.style.width = 'auto'
   node.style.maxWidth = 'none'
@@ -162,6 +161,7 @@ export async function captureDomToPng(
 
   await waitForLayout()
   await normalizeImagesForCapture(captureRoot)
+  beforeCapture?.(node)
 
   const dataUrl = await toPng(captureRoot, {
     pixelRatio: options.pixelRatio ?? 2,

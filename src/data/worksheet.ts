@@ -335,6 +335,8 @@ export interface WorksheetDraft {
   modeParams?: ModeParams
   /** Варианты / уровни / карточки. Пусто — обычный лист. */
   groups?: BlockGroup[]
+  /** Full original variants for the teacher's assessment appendix only. */
+  exportCriteriaBlocks?: WorksheetBlock[]
 }
 
 export const SUBJECTS = [

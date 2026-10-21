@@ -47,6 +47,8 @@ export async function exportWorksheetDocxBlob(
 
   const doc = new Document({
     styles: {
+      paragraphStyles: [{ id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { font: runFont(), color: '161A33', bold: true, size: 28 }, paragraph: { outlineLevel: 0 } }],
       default: {
         document: {
           run: {
@@ -68,6 +70,8 @@ export async function exportWorksheetDocxBlob(
               right: PAGE_MARGIN_TWIPS,
             },
             size: {
+              width: 11906,
+              height: 16838,
               orientation:
                 options.orientation === 'landscape'
                   ? PageOrientation.LANDSCAPE

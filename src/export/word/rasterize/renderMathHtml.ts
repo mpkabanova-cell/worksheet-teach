@@ -1,7 +1,7 @@
 import katex from 'katex'
 import katexCss from 'katex/dist/katex.min.css?inline'
 import { needsDoubleCellHeight, texForCellsLayout } from '@/data/mathTextUtils'
-import { FONT_MATH_CSS, resolveTextColorCss } from '@/export/word/layoutTokens'
+import { FONT_CSS, resolveTextColorCss } from '@/export/word/layoutTokens'
 import { parseContent, type ContentSegment } from '@/export/word/richText/parseRichText'
 
 let katexStyleNode: HTMLStyleElement | null = null
@@ -150,7 +150,7 @@ function appendContentSegments(
   const color = options.positive ? '#0DB56C' : (options.color ?? resolveTextColorCss({}))
   const container = document.createElement('span')
   container.className = options.cellsLayout ? 'math-text math-text--cells' : 'math-text'
-  container.style.fontFamily = FONT_MATH_CSS
+  container.style.fontFamily = FONT_CSS
   container.style.fontSize = `${options.fontSize ?? 14}px`
   container.style.lineHeight = `${options.cellsLayout ? cellSize : (options.lineHeight ?? 20)}px`
   container.style.color = color

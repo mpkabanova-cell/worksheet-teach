@@ -1,4 +1,5 @@
 import type { WorksheetBlock } from '@/data/worksheet'
+import { pointsLabel } from '@/data/worksheet'
 import { isQuestionPlaceholder } from '@/data/blockUtils'
 import {
   getStarEmptyPng,
@@ -348,13 +349,15 @@ export async function buildTaskHeadTable(
     isAnswerBlock && isQuestionPlaceholder(questionText)
       ? COLORS.textSecondary
       : COLORS.textDefault
-  const showDifficulty = ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
+  const showDifficulty = block.points == null && ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
   const difficultyTopGapPx = isAnswerBlock ? LAYOUT.answerTaskMainGap : LAYOUT.taskMainGap
 
   const numCellWidthDxa = pxToDxa(LAYOUT.taskNumWidth)
   const maxContentWidthPx = getTaskQuestionWidthPx(contentWidthCapDxa)
   const contentWidthDxa = contentWidthCapDxa ?? pxToDxa(SHEET_CONTENT_WIDTH_PX - LAYOUT.taskNumWidth)
-  const maxContentCols = 1
+  const maxContentCols = block.points != null ? 2 : 1
+  const pointsWidthDxa = block.points != null ? pxToDxa(88) : 0
+  const questionWidthDxa = contentWidthDxa - pointsWidthDxa
   const hasExtraRows = extraRows != null
   const rowKeepNext = hasExtraRows || showDifficulty
 
@@ -379,8 +382,7 @@ export async function buildTaskHeadTable(
           VerticalAlignTable.TOP,
         ),
         new TableCell({
-          columnSpan: maxContentCols,
-          width: { size: contentWidthDxa, type: WidthType.DXA },
+          width: { size: questionWidthDxa, type: WidthType.DXA },
           borders: hiddenCellBorders(),
           margins: {
             top: CELL_MARGIN_TWIPS,
@@ -394,6 +396,12 @@ export async function buildTaskHeadTable(
               ? questionParagraphs
               : [new Paragraph({ spacing: questionParagraphSpacing(qStyle), children: [new TextRun({ text: '' })] })],
         }),
+        ...(block.points != null ? [new TableCell({
+          width: { size: pointsWidthDxa, type: WidthType.DXA },
+          borders: hiddenCellBorders(), margins: { top: 0, bottom: 0, left: 0, right: 0 },
+          verticalAlign: VerticalAlignTable.TOP,
+          children: [new Paragraph({ alignment: 'right', children: [new TextRun({ text: pointsLabel(block.points), bold: true, font: runFont(), size: pxToHalfPoints(TYPO.plainBody.sizePx), color: COLORS.textDefault })] })],
+        })] : []),
       ],
     }),
   ]
@@ -426,7 +434,7 @@ export async function buildTaskHeadTable(
     )
   }
 
-  const firstRowColumnWidths = [numCellWidthDxa, contentWidthDxa]
+  const firstRowColumnWidths = pointsWidthDxa ? [numCellWidthDxa, questionWidthDxa, pointsWidthDxa] : [numCellWidthDxa, contentWidthDxa]
   const grid: TaskHeadGrid = {
     maxContentCols,
     numCellWidthDxa,

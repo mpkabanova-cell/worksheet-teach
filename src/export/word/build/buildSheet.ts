@@ -31,11 +31,6 @@ async function buildPageBlocks(
     result.push(buildPageFooter(page))
   }
 
-  if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
-    result.push(new Paragraph({ children: [new PageBreak()] }))
-    result.push(...buildCriteriaSheet(ctx.draft))
-  }
-
   return result
 }
 
@@ -55,11 +50,6 @@ export async function buildSheetBody(
     result.push(...(await buildPageBlocks(page, totalPages, ctx, showAnswerOverride)))
   }
 
-  if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
-    result.push(new Paragraph({ children: [new PageBreak()] }))
-    result.push(...buildCriteriaSheet(ctx.draft))
-  }
-
   return result
 }
 
@@ -72,7 +62,7 @@ export async function buildWorksheetDocumentChildren(ctx: ExportContext): Promis
 
   const result: FileChild[] = await buildSheetBody(studentCtx, showAnswersInline)
 
-  if (ctx.options.answersSeparate) {
+  if (ctx.options.showAnswers && ctx.options.answersSeparate) {
     result.push(new Paragraph({ children: [new PageBreak()] }))
     result.push(buildAnswersTitle())
     result.push(...(await buildSheetBody({ ...ctx, options: { ...ctx.options, showAnswers: true } }, true)))
@@ -80,7 +70,7 @@ export async function buildWorksheetDocumentChildren(ctx: ExportContext): Promis
 
   if (hasCriteriaSheet(ctx.draft, ctx.options.showAnswers)) {
     result.push(new Paragraph({ children: [new PageBreak()] }))
-    result.push(...buildCriteriaSheet(ctx.draft))
+    result.push(...await buildCriteriaSheet(ctx))
   }
 
   return result

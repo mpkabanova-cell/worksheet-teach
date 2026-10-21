@@ -11,6 +11,9 @@ import {
   markGapAnswersInText,
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
+import { pointsLabel } from '@/data/worksheet'
+import { teacherDetailLines } from '@/export/assessmentContent'
+import { qrCodeUrl } from '@/data/blockUtils'
 import {
   getChoiceCheckboxCheckedPng,
   getChoiceCheckboxMarkerPng,
@@ -41,7 +44,7 @@ function createTaskRoot(): HTMLDivElement {
   root.style.width = `${SHEET_CONTENT_WIDTH_PX}px`
   root.style.boxSizing = 'border-box'
   root.style.fontFamily = FONT_CSS
-  root.style.background = '#ffffff'
+  root.style.background = `#${COLORS.white}`
   root.style.display = 'flex'
   root.style.flexDirection = 'column'
   root.style.gap = `${LAYOUT.taskGap}px`
@@ -82,7 +85,7 @@ const CHOICE_IMAGE_PX = 120
 function bytesToDataUrl(bytes: Uint8Array): string {
   let binary = ''
   for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]!)
+    binary += String.fromCharCode(bytes[i])
   }
   const mime = bytes[0] === 0xff && bytes[1] === 0xd8 ? 'jpeg' : 'png'
   return `data:image/${mime};base64,${btoa(binary)}`
@@ -268,15 +271,28 @@ export async function rasterizeTaskBlockForPdf(
   })
   mainCol.appendChild(questionCell)
 
-  const showDifficulty = ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
+  const showDifficulty = block.points == null && ctx.options.showDifficulty && (isAnswerBlock || !!block.difficulty)
   if (showDifficulty) {
     await appendDifficultyRow(mainCol, block, ctx)
   }
 
   headRow.appendChild(mainCol)
+  if (block.points != null) {
+    const points = document.createElement('div')
+    points.textContent = pointsLabel(block.points)
+    points.style.width = '88px'
+    points.style.flexShrink = '0'
+    points.style.textAlign = 'right'
+    points.style.fontSize = `${TYPO.plainBody.sizePx}px`
+    points.style.lineHeight = `${TYPO.plainBody.linePx}px`
+    points.style.color = `#${COLORS.textDefault}`
+    points.style.fontWeight = '600'
+    headRow.appendChild(points)
+  }
   root.appendChild(headRow)
 
   const slot = createTaskSlot()
+  let beforeCapture: (() => void) | undefined
 
   if (isChoiceBlock(block) && (block.choiceOptionFormat ?? 'text') === 'text') {
     let options = getChoiceDisplayOptions(block, false, false)
@@ -313,10 +329,10 @@ export async function rasterizeTaskBlockForPdf(
   }
 
   if (block.type === 'matching') {
-    appendMatchingWidget(slot, block, showAnswer)
+    beforeCapture = appendMatchingWidget(slot, block, showAnswer)
   } else if (block.type === 'ordering') {
     appendOrderingWidget(slot, block, showAnswer)
-  } else if (block.type === 'grouping') {
+  } else if (block.type === 'grouping' || block.type === 'table') {
     appendGroupingWidget(slot, block, showAnswer)
   }
 
@@ -343,8 +359,30 @@ export async function rasterizeTaskBlockForPdf(
   if (slot.childNodes.length > 0) {
     root.appendChild(slot)
   }
+  if (block.type === 'answer_field') {
+    appendMathText(root, block.mediaFileName || block.mediaUrl || 'Медиафайл', { fontSize: TYPO.plainBody.sizePx, lineHeight: TYPO.plainBody.linePx })
+    if (block.mediaUrl) {
+      const bytes = await fetchImageBytes(qrCodeUrl(block.mediaUrl, LAYOUT.qrSize), ctx)
+      if (bytes) await appendMarkerImg(root, bytes, LAYOUT.qrSize)
+    }
+  }
+  if (showAnswer) {
+    const key = document.createElement('div')
+    key.style.background = `#${COLORS.bgBrandSoft}`
+    key.style.padding = '12px'
+    key.style.borderRadius = '8px'
+    key.style.display = 'flex'
+    key.style.flexDirection = 'column'
+    key.style.gap = '4px'
+    for (const line of teacherDetailLines(block)) {
+      const detail = document.createElement('div')
+      appendMathText(detail, line, { fontSize: TYPO.plainBody.sizePx, lineHeight: TYPO.plainBody.linePx })
+      key.appendChild(detail)
+    }
+    if (key.childNodes.length) root.appendChild(key)
+  }
 
-  return captureDomToPng(root, `pdf-task-${block.id}-${showAnswer ? 'a' : 's'}`, ctx, undefined, {
+  return captureDomToPng(root, `pdf-task-${block.id}-${showAnswer ? 'a' : 's'}`, ctx, beforeCapture, {
     fitContent: false,
     pixelRatio: PDF_DOM_CAPTURE_PIXEL_RATIO,
   })

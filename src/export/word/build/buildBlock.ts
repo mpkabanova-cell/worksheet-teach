@@ -12,6 +12,7 @@ import {
   qrCodeUrl,
 } from '@/data/blockUtils'
 import { getBlockQuestion } from '@/data/taskContent'
+import { teacherDetailLines } from '@/export/assessmentContent'
 import {
   getChoiceCheckboxCheckedPng,
   getChoiceCheckboxMarkerPng,
@@ -425,7 +426,7 @@ export async function buildBlockContent(
         }),
       ],
     }
-  } else if (block.type === 'grouping') {
+  } else if (block.type === 'grouping' || block.type === 'table') {
     const layout = getTaskBlockLayout(block)
     const groupingParagraphs = await buildGrouping(block, showAnswer, ctx)
     headOptions = {
@@ -464,6 +465,9 @@ export async function buildBlockContent(
 
   result.push(head)
   result.push(...bodyParts)
+  if (showAnswer) {
+    for (const line of teacherDetailLines(block)) result.push(...await richParagraphs(line, TYPO.plainBody, ctx))
+  }
   result.push(spacerParagraph(LAYOUT.taskGap))
   return result
 }
