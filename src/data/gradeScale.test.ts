@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultGradeScale, gradeForPoints, isValidGradeScale } from './worksheet'
+import { defaultGradeScale, gradeForPoints, isValidGradeScale, pointsLabel } from './worksheet'
 
 describe('шкала оценивания', () => {
   it('шкала по умолчанию для 15 баллов: 13–15 «5», 10–12 «4», 7–9 «3», 0–6 «2»', () => {
@@ -27,5 +27,17 @@ describe('шкала оценивания', () => {
 
   it('отрицательные баллы не получают отметку', () => {
     expect(gradeForPoints(-1, defaultGradeScale(15))).toBeNull()
+  })
+})
+
+describe('подпись баллов за задание', () => {
+  it('склоняет «балл/балла/баллов» по числу', () => {
+    expect(pointsLabel(1)).toBe('1 балл')
+    expect(pointsLabel(2)).toBe('2 балла')
+    expect(pointsLabel(4)).toBe('4 балла')
+    expect(pointsLabel(5)).toBe('5 баллов')
+    expect(pointsLabel(11)).toBe('11 баллов')
+    expect(pointsLabel(21)).toBe('21 балл')
+    expect(pointsLabel(25)).toBe('25 баллов')
   })
 })

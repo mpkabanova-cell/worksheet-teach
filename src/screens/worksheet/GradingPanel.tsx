@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MathText } from '@/components/MathText'
 import { blockAnswerText, modeParamsOf } from '@/data/materialModes'
-import { defaultGradeScale, gradeForPoints, isValidGradeScale, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
+import { defaultGradeScale, gradeForPoints, isValidGradeScale, pointsLabel, type GradeThreshold, type WorksheetDraft } from '@/data/worksheet'
 
 /** Учительская панель «Ответы и оценивание» для работ для проверки. */
 export function GradingPanel({
@@ -46,8 +46,9 @@ export function GradingPanel({
             <tr key={b.id} className={openId === b.id ? 'is-open' : ''}>
               <td>{i + 1}</td>
               <td>
-                <button type="button" className="grading-skill" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
-                  {b.skill || b.title || 'Задание'}
+                <span className="grading-skill-name">{b.skill || b.title || 'Задание'}</span>
+                <button type="button" className="grading-expand" onClick={() => setOpenId(openId === b.id ? null : b.id)}>
+                  {openId === b.id ? 'Скрыть решение и критерии ▴' : 'Решение и критерии ▾'}
                 </button>
                 {b.criteriaStatus === 'needs-review' ? (
                   <span className="grading-flag" role="note">Проверьте ключ и критерии</span>
@@ -78,7 +79,7 @@ export function GradingPanel({
           ))}
         </tbody>
       </table>
-      <p className="grading-total">Всего: {total} балл(ов)</p>
+      <p className="grading-total">Всего: {pointsLabel(total)}</p>
       {grading === 'grade' ? (
         <fieldset className="grading-scale">
           <legend>Шкала отметок</legend>

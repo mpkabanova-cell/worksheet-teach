@@ -186,6 +186,15 @@ export function gradeForPoints(points: number, scale: GradeThreshold[]): string 
 }
 
 /** Шкала корректна: пороги неотрицательны и строго убывают для 5→2. */
+/** Подпись максимума баллов за задание: «1 балл», «3 балла», «5 баллов». */
+export function pointsLabel(n: number): string {
+  const abs = Math.abs(Math.trunc(n))
+  const mod100 = abs % 100
+  const mod10 = abs % 10
+  const word = mod100 >= 11 && mod100 <= 14 ? 'баллов' : mod10 === 1 ? 'балл' : mod10 >= 2 && mod10 <= 4 ? 'балла' : 'баллов'
+  return `${abs} ${word}`
+}
+
 export function isValidGradeScale(scale: GradeThreshold[]): boolean {
   if (scale.length !== 4) return false
   const order: GradeThreshold['grade'][] = ['5', '4', '3', '2']

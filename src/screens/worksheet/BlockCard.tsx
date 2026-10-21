@@ -1,6 +1,6 @@
 import type { DragEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import type { BlockPreviewState, WorksheetBlock } from '@/data/worksheet'
+import { pointsLabel, type BlockPreviewState, type WorksheetBlock } from '@/data/worksheet'
 import {
   clampText,
   getBlockAnswerStyle,
@@ -346,6 +346,11 @@ export function BlockCard({
                 </div>
               ) : null}
             </div>
+            {!isEditing && block.points != null && block.points > 0 ? (
+              <span className="ws-task-points" title="Максимум баллов за задание">
+                {pointsLabel(block.points)}
+              </span>
+            ) : null}
           </div>
         ) : (
           <div className="ws-task-main plain-body">
