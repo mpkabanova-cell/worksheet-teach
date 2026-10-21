@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Sidebar } from '@/components/Sidebar'
-import { generateSingleTaskAI, generateWorksheetAI } from '@/data/ai'
+import { generateSingleTaskAI } from '@/data/ai'
+import { generateMaterialAI, verifyBlockAnswers } from '@/data/materialGeneration'
+import { GenerationCancelled, runGeneration, type GenerationStage } from '@/data/generationControl'
+import { draftForExport, replaceBlockKeepingSlot } from '@/data/materialModes'
 import type { GenerateMode } from '@/data/ai'
 import {
   createEmptyBlock,
@@ -12,6 +15,7 @@ import {
   emptyDraft,
   filledCreateDraft,
   loadWorksheet,
+  migrateWorksheetDraft,
   uid,
   type Modal,
   type NavId,
@@ -41,6 +45,9 @@ function demoDraft(): WorksheetDraft {
   })
 }
 
+const PENDING_KEY = 'ws-pending-generation'
+const AUTOSAVE_KEY = 'ws-autosave-draft'
+
 const SHELL_SCREENS: Screen[] = ['home', 'worksheets-list', 'coming-soon']
 
 function navFromScreen(screen: Screen, stubNav: NavId): NavId {
@@ -57,6 +64,8 @@ export default function App() {
   const [createAdvanced, setCreateAdvanced] = useState(false)
   const [draft, setDraftState] = useState<WorksheetDraft>(() => demoDraft())
   const [modal, setModal] = useState<Modal>(null)
+  const modalRef = useRef<Modal>(null)
+  modalRef.current = modal
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [deletePageIndex, setDeletePageIndex] = useState<number | null>(null)
@@ -68,6 +77,16 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState('')
   const [listRefresh, setListRefresh] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [genStage, setGenStage] = useState<GenerationStage | null>(null)
+  const [genError, setGenError] = useState<string | null>(null)
+  const [genRun, setGenRun] = useState(0)
+  const genAbortRef = useRef<AbortController | null>(null)
+  const genErrorRef = useRef<string | null>(null)
+  genErrorRef.current = genError
+  const taskAbortRef = useRef<AbortController | null>(null)
+  const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null)
+  const [replaceReview, setReplaceReview] = useState<{ id: string; prev: WorksheetBlock } | null>(null)
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
   const toastTimer = useRef<number | null>(null)
   const draftRef = useRef(draft)
   const generateModeRef = useRef<GenerateMode>('create')
@@ -137,41 +156,116 @@ export default function App() {
   }, [sidebarOpen])
 
   useEffect(() => {
-    if (screen !== 'loader') return
-    let cancelled = false
-    const started = Date.now()
+    if (screen !== 'loader' || genErrorRef.current) return
+    const controller = new AbortController()
+    genAbortRef.current = controller
     const mode = generateModeRef.current
+    setGenStage(null)
+    try {
+      localStorage.setItem(PENDING_KEY, JSON.stringify({ draft: draftRef.current, mode }))
+    } catch {
+      /* storage full */
+    }
 
     ;(async () => {
       try {
-        const next = await generateWorksheetAI(draftRef.current, mode)
-        const wait = Math.max(0, 900 - (Date.now() - started))
-        await new Promise((r) => window.setTimeout(r, wait))
-        if (cancelled) return
+        const next = await runGeneration(() => generateMaterialAI(draftRef.current, mode), {
+          signal: controller.signal,
+          onStage: (st) => {
+            if (!controller.signal.aborted) setGenStage(st)
+          },
+        })
+        if (controller.signal.aborted) return
+        localStorage.removeItem(PENDING_KEY)
         setDraft(syncPagesFromBreaks(next))
+        setActiveGroupId(next.groups?.[0]?.id ?? null)
         setPendingGenerate(false)
         setCurrentPage(0)
         setSelectedBlockId(null)
         setCreateOpen(false)
         setScreen(mode === 'regenerate' ? 'edit' : 'preview')
-        if (mode === 'regenerate') showToast('Рабочий лист перегенерирован')
+        showToast(mode === 'regenerate' ? 'Материал перегенерирован' : 'Материал готов')
       } catch (err) {
-        if (cancelled) return
+        if (controller.signal.aborted || err instanceof GenerationCancelled) return
         setPendingGenerate(false)
-        if (mode === 'regenerate') {
-          setScreen('edit')
-        } else {
-          setCreateOpen(true)
-          setScreen('home')
-        }
-        showToast(err instanceof Error ? err.message : 'Ошибка генерации')
+        setGenError(err instanceof Error && err.message ? err.message : 'Не удалось сгенерировать материал')
       }
     })()
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
-  }, [screen, setDraft])
+  }, [screen, genRun, setDraft])
+
+  const cancelGeneration = () => {
+    genAbortRef.current?.abort()
+    localStorage.removeItem(PENDING_KEY)
+    setGenError(null)
+    setPendingGenerate(false)
+    if (generateModeRef.current === 'regenerate') setScreen('edit')
+    else {
+      setCreateOpen(true)
+      setScreen('home')
+    }
+    showToast('Генерация отменена')
+  }
+
+  const retryGeneration = () => {
+    setGenError(null)
+    genErrorRef.current = null
+    setGenRun((n) => n + 1)
+  }
+
+  const backToFormFromError = () => {
+    localStorage.removeItem(PENDING_KEY)
+    setGenError(null)
+    if (generateModeRef.current === 'regenerate') setScreen('edit')
+    else {
+      setCreateOpen(true)
+      setScreen('home')
+    }
+  }
+
+  // Восстановление после обновления страницы
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem(PENDING_KEY)
+      if (pending) {
+        const parsed = JSON.parse(pending) as { draft: Record<string, unknown>; mode: GenerateMode }
+        setDraftState(migrateWorksheetDraft(parsed.draft))
+        setGenerateMode(parsed.mode)
+        generateModeRef.current = parsed.mode
+        setGenError('Генерация прервалась из‑за обновления страницы.')
+        setScreen('loader')
+        return
+      }
+      const auto = localStorage.getItem(AUTOSAVE_KEY)
+      if (auto) {
+        const parsed = JSON.parse(auto) as { draft: Record<string, unknown> }
+        const restored = normalizeWorksheetDraft(migrateWorksheetDraft(parsed.draft))
+        if (restored.blocks.length) {
+          setDraftState(restored)
+          setActiveGroupId(restored.groups?.[0]?.id ?? null)
+          setScreen('edit')
+          showToast('Черновик восстановлен')
+        }
+      }
+    } catch {
+      /* ignore corrupt storage */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Автосохранение черновика в браузере, пока открыт редактор
+  useEffect(() => {
+    const inEditor = ['edit', 'edit-widget', 'add-block', 'preview', 'show-answers', 'print'].includes(screen)
+    try {
+      if (inEditor) localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ draft }))
+      else if (screen === 'home' || screen === 'worksheets-list') localStorage.removeItem(AUTOSAVE_KEY)
+    } catch {
+      /* storage full */
+    }
+  }, [draft, screen])
 
   useEffect(() => {
     if (screen === 'edit-widget' && !selectedBlockId && draft.blocks[0]) {
@@ -212,7 +306,6 @@ export default function App() {
       intro: createMode === 'manual' ? '' : d.intro,
       createdManually: createMode === 'manual',
       showIntro: createMode === 'manual' ? false : d.showIntro,
-      ...(createMode === 'manual' ? { subject: '', grade: '' } : {}),
     }))
     if (createMode === 'manual') {
       setSelectedBlockId(null)
@@ -221,6 +314,8 @@ export default function App() {
     }
     setPendingGenerate(true)
     setGenerateMode('create')
+    generateModeRef.current = 'create'
+    setGenError(null)
     setScreen('loader')
   }
 
@@ -245,7 +340,7 @@ export default function App() {
       setScreen('edit')
       return
     }
-    const block = createEmptyBlock(type, currentPage, draft.subject)
+    const block = { ...createEmptyBlock(type, currentPage, draft.subject), groupId: activeGroupId ?? undefined }
     setDraft((d) =>
       syncPagesFromBreaks({
         ...d,
@@ -345,12 +440,56 @@ export default function App() {
     setModal('delete-page')
   }
 
+  const openReplaceBlock = (id: string) => {
+    const target = draft.blocks.find((b) => b.id === id)
+    if (!target) return
+    setReplaceTargetId(id)
+    if (target.type !== 'text' && target.type !== 'page_break' && target.type !== 'answer_field') {
+      setGenerateTaskType(target.type)
+    }
+    setModal('generate-task')
+  }
+
+  const openAddGeneratedTask = () => {
+    setReplaceTargetId(null)
+    setModal('generate-task')
+  }
+
+  const cancelGenerateTask = () => {
+    taskAbortRef.current?.abort()
+    taskAbortRef.current = null
+    setGenerateTaskBusy(false)
+    setReplaceTargetId(null)
+    setModal(null)
+  }
+
   const confirmGenerateTask = async () => {
     if (generateTaskBusy) return
+    const controller = new AbortController()
+    taskAbortRef.current = controller
+    const targetId = replaceTargetId
     setGenerateTaskBusy(true)
     try {
-      const block = await generateSingleTaskAI(draft, generateTaskType, generateTaskHint)
+      const fresh = await runGeneration(
+        () => generateSingleTaskAI(draftRef.current, generateTaskType, generateTaskHint),
+        { signal: controller.signal },
+      )
+      if (controller.signal.aborted) return
+      const [block] = verifyBlockAnswers([fresh])
       block.page = currentPage
+      block.groupId = activeGroupId ?? undefined
+      if (targetId) {
+        const prev = draftRef.current.blocks.find((b) => b.id === targetId)
+        setDraft((d) => ({ ...d, blocks: replaceBlockKeepingSlot(d.blocks, targetId, block) }))
+        setSelectedBlockId(targetId)
+        setGenerateTaskHint('')
+        if (prev) {
+          setReplaceReview({ id: targetId, prev })
+          setModal('replace-review')
+        } else setModal(null)
+        setScreen('edit')
+        return
+      }
       setDraft((d) =>
         syncPagesFromBreaks({
           ...d,
@@ -359,15 +498,27 @@ export default function App() {
         }),
       )
       setSelectedBlockId(block.id)
-      setModal(null)
+      if (modalRef.current === 'generate-task') setModal(null)
       setGenerateTaskHint('')
       setScreen('edit')
       showToast('Задание добавлено')
     } catch (err) {
+      if (controller.signal.aborted || err instanceof GenerationCancelled) return
       showToast(err instanceof Error ? err.message : 'Ошибка генерации задания')
     } finally {
+      if (taskAbortRef.current === controller) taskAbortRef.current = null
       setGenerateTaskBusy(false)
+      setReplaceTargetId(null)
     }
+  }
+
+  const revertReplace = () => {
+    if (!replaceReview) return
+    const { id, prev } = replaceReview
+    setDraft((d) => ({ ...d, blocks: d.blocks.map((b) => (b.id === id ? prev : b)) }))
+    setReplaceReview(null)
+    setModal(null)
+    showToast('Возвращена прежняя версия')
   }
 
   const handleSave = () => {
@@ -376,16 +527,17 @@ export default function App() {
     localStorage.setItem(`worksheet:${saved.id}`, JSON.stringify(saved))
     setListRefresh((n) => n + 1)
     setModal(null)
-    showToast('Рабочий лист сохранён')
+    showToast('Сохранено в «Материалы»')
   }
 
   const handleExportDocx = async () => {
     setModal(null)
     try {
-      await exportWorksheetDocx(draft)
-      showToast('DOCX сохранён')
+      showToast('Готовим DOCX…')
+      await exportWorksheetDocx(draftForExport(draft))
+      showToast('DOCX скачан')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Ошибка экспорта DOCX')
+      showToast(`Не удалось сделать DOCX: ${err instanceof Error ? err.message : 'ошибка'}. Документ сохранён — попробуйте ещё раз.`)
     }
   }
 
@@ -393,16 +545,24 @@ export default function App() {
     setModal(null)
     showToast('Формируем PDF…')
     try {
-      await exportWorksheetPdf(draft)
-      showToast('PDF сохранён')
+      await exportWorksheetPdf(draftForExport(draft))
+      showToast('PDF скачан')
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Ошибка экспорта PDF')
+      showToast(`Не удалось сделать PDF: ${err instanceof Error ? err.message : 'ошибка'}. Документ сохранён — попробуйте ещё раз.`)
     }
   }
 
   const handlePrint = () => {
     setModal(null)
     const prevAnswers = draft.showAnswers
+    if ((draft.print.audience ?? 'student') === 'student') {
+      setDraft((d) => ({ ...d, showAnswers: false }))
+      window.setTimeout(() => {
+        window.print()
+        setDraft((d) => ({ ...d, showAnswers: prevAnswers }))
+      }, 100)
+      return
+    }
     if (draft.print.answersSeparate) {
       setDraft((d) => ({ ...d, showAnswers: false }))
       window.setTimeout(() => {
@@ -442,6 +602,30 @@ export default function App() {
     setCurrentPage(0)
     setSelectedBlockId(null)
     setScreen('edit')
+  }
+
+  const groups = draft.groups ?? []
+  const activeGroup = groups.length
+    ? groups.some((g) => g.id === activeGroupId)
+      ? activeGroupId
+      : groups[0].id
+    : null
+  const viewDraft: WorksheetDraft = activeGroup
+    ? { ...draft, blocks: draft.blocks.filter((b) => b.groupId === activeGroup) }
+    : draft
+  const changeViewDraft = (next: WorksheetDraft) => {
+    if (!activeGroup) {
+      setDraft(next)
+      return
+    }
+    setDraft((d) => ({
+      ...next,
+      groups: d.groups,
+      blocks: [
+        ...d.blocks.filter((b) => b.groupId !== activeGroup),
+        ...next.blocks.map((b) => ({ ...b, groupId: activeGroup })),
+      ],
+    }))
   }
 
   const worksheetMode =
@@ -538,7 +722,17 @@ export default function App() {
               ? 'Пересобираю задания…'
               : 'Думаю над темой'
           }
-          onHome={() => setScreen('home')}
+          onHome={() => {
+            genAbortRef.current?.abort()
+            localStorage.removeItem(PENDING_KEY)
+            setGenError(null)
+            setScreen('home')
+          }}
+          stage={genStage}
+          error={genError}
+          onCancel={cancelGeneration}
+          onRetry={retryGeneration}
+          onBackToForm={backToFormFromError}
         />
       ) : null}
 
@@ -549,7 +743,15 @@ export default function App() {
       screen === 'show-answers' ? (
         <ErrorBoundary onReset={() => setScreen('edit')}>
           <WorksheetScreen
-          draft={draft}
+          draft={viewDraft}
+          groupTabs={draft.groups}
+          activeGroupId={activeGroup}
+          onGroupChange={(id) => {
+            setActiveGroupId(id)
+            setSelectedBlockId(null)
+            setCurrentPage(0)
+          }}
+          onReplaceBlock={openReplaceBlock}
           mode={worksheetMode}
           selectedBlockId={selectedBlockId}
           currentPage={currentPage}
@@ -561,7 +763,7 @@ export default function App() {
             }
           }}
           onChangeBlock={updateBlock}
-          onChangeDraft={setDraft}
+          onChangeDraft={changeViewDraft}
           onAddBlock={addBlock}
           onRemoveBlock={removeBlock}
           onDuplicateBlock={duplicateBlock}
@@ -587,7 +789,7 @@ export default function App() {
           }}
           onAddBlockOpen={() => setScreen('edit')}
           onCloseAddBlock={() => setScreen('edit')}
-          onGenerateTask={() => setModal('generate-task')}
+          onGenerateTask={openAddGeneratedTask}
           onRegenerate={() => setModal('regenerate')}
           onSave={handleSave}
           onUndo={undo}
@@ -604,6 +806,8 @@ export default function App() {
           onBack={() => setScreen('preview')}
           onPrint={handlePrint}
           onPdf={handleExportPdf}
+          onDocx={handleExportDocx}
+          onSave={handleSave}
         />
       ) : null}
 
@@ -619,7 +823,22 @@ export default function App() {
           setModal(null)
           setDeletePageIndex(null)
         }}
-        onOpen={setModal}
+        onOpen={(m) => {
+          if (m === 'download') {
+            setModal(null)
+            setScreen('print')
+            return
+          }
+          setModal(m)
+        }}
+        replaceMode={Boolean(replaceTargetId)}
+        onCancelGenerateTask={cancelGenerateTask}
+        onAcceptReplace={() => {
+          setReplaceReview(null)
+          setModal(null)
+          showToast('Задание заменено')
+        }}
+        onRevertReplace={revertReplace}
         onChangeDraft={setDraft}
         onGenerateTaskType={setGenerateTaskType}
         onGenerateTaskHint={setGenerateTaskHint}
@@ -650,6 +869,8 @@ export default function App() {
           setModal(null)
           setPendingGenerate(true)
           setGenerateMode('regenerate')
+          generateModeRef.current = 'regenerate'
+          setGenError(null)
           setScreen('loader')
         }}
         onConfirmGenerateTask={confirmGenerateTask}
