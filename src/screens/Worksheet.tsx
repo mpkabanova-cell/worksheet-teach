@@ -556,7 +556,7 @@ export function WorksheetScreen({
               </div>
             ) : null}
             {showAnswers && draft.materialType === 'assessment' ? (
-              <GradingPanel draft={draft} onChangeDraft={isEdit ? onChangeDraft : undefined} />
+              <GradingPanel draft={draft} onChangeDraft={onChangeDraft} />
             ) : null}
           </div>
         </main>
