@@ -1,4 +1,5 @@
 import type { DifficultyMode, TaskType, WorksheetBlock, WorksheetDraft } from './worksheet'
+import { modePromptRules } from './materialModes'
 import { ADDITIONAL_WISHES_MAX_LENGTH, labelForType } from './worksheet'
 import { getGapsSourceText } from './blockUtils'
 import { sourceContentForDraft } from './contextFile'
@@ -295,7 +296,8 @@ ${OUTPUT_FORMAT}
 - matching: right_items перемешай; correct_answers — пары «лево → право», биекция 1:1.
 - fill_gaps: gaps_text с ___; question — короткая формулировка, не дублируй gaps_text.
 - fill_gaps: запрещён шаблон «По теме «…» важно помнить: ___ — это основа…»; бери числа и сюжет из source_content.
-- table: 2–6 групп; элементы — короткие слова/числа без теории в question.`
+- table: 2–6 групп; элементы — короткие слова/числа без теории в question.
+${modePromptRules(draft)}`
 
   const regenerateAnchors =
     mode === 'regenerate'
@@ -343,6 +345,7 @@ export function promptsForSingleTask(
     planDescription || expectation,
   )
   const system = `Ты — методист. Сгенерируй ОДНО школьное задание для рабочего листа.
+${modePromptRules(draft)}
 
 Тип: ${taskType} (${labelForType(taskType)}).
 
