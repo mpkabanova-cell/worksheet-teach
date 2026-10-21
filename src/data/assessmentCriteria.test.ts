@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { criteriaCoversAllLevels, ensureCriteriaLevels, platformTaskNumbers } from './assessmentCriteria'
+import { changeTaskPoints, criteriaCoversAllLevels, criteriaDisplayLines, ensureCriteriaLevels, platformTaskNumbers } from './assessmentCriteria'
 import { draftForExport } from './materialModes'
 import { emptyDraft, type WorksheetBlock } from './worksheet'
 
@@ -8,6 +8,17 @@ const task = (id: string, groupId: string, extra: Partial<WorksheetBlock> = {}):
 })
 
 describe('критерии по всем уровням', () => {
+  it('разделяет каждый балл даже в старых однострочных критериях', () => {
+    expect(criteriaDisplayLines('2 балла — всё верно. 1 балл — одна ошибка. 0 баллов — неверно.')).toEqual([
+      '2 балла — всё верно', '1 балл — одна ошибка', '0 баллов — неверно',
+    ])
+  })
+  it('сохраняет изменённые баллы и требует проверки всех уровней', () => {
+    const b = changeTaskPoints(task('a', 'v1', { points: 1, criteria: '1 балл — верно\n0 баллов — неверно' }), 2)
+    expect(b.points).toBe(2)
+    expect(criteriaCoversAllLevels(b.criteria, 2)).toBe(true)
+    expect(b.criteriaStatus).toBe('needs-review')
+  })
   it('требует описания каждого уровня от максимума до 0', () => {
     expect(criteriaCoversAllLevels('2 балла — верно\n0 баллов — неверно', 2)).toBe(false)
     expect(criteriaCoversAllLevels('2 балла — верно\n1 балл — одна ошибка\n0 баллов — неверно', 2)).toBe(true)
