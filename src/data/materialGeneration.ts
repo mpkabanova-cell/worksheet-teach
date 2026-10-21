@@ -1,4 +1,5 @@
 import { ensureCriteriaLevels } from './assessmentCriteria'
+import { repairCriteriaLevels } from './criteriaRepair'
 import { generateSingleTaskAI, generateWorksheetAI, type GenerateMode } from './ai'
 import { blockTaskText, findVariantIssues, looksLikePlanDescription } from './contentChecks'
 import { verifiedAnswer } from './fractionCheck'
@@ -47,9 +48,10 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
       materialType: type,
       modeParams: params,
       groups: [],
-      blocks: verifyBlockAnswers(result.blocks)
-        .map((b) => (points ? ensureCriteriaLevels(b.points ? b : { ...b, points: b.difficulty ?? 1 }) : b))
-        .map(cardTitle),
+      blocks: (points
+        ? (await repairCriteriaLevels(verifyBlockAnswers(result.blocks).map((b) => (b.points ? b : { ...b, points: b.difficulty ?? 1 })))).map(ensureCriteriaLevels)
+        : verifyBlockAnswers(result.blocks)
+      ).map(cardTitle),
     }
   }
 
@@ -99,8 +101,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
     }
     const stars = type === 'differentiated' ? levelToStars(g.id.replace('level-', '') as DiffLevel) : undefined
     const points = type === 'assessment' && params.assessment.grading !== 'none'
-    allBlocks.push(
-      ...verifyBlockAnswers(result.blocks)
+    const partBlocks = verifyBlockAnswers(result.blocks)
         .filter((b) => b.type !== 'page_break')
         .map((b) => ({
           ...b,
@@ -109,8 +110,7 @@ export async function generateMaterialAI(draft: WorksheetDraft, mode: GenerateMo
           difficulty: stars ?? b.difficulty,
           points: points ? (b.points ?? b.difficulty ?? 1) : b.points,
         }))
-        .map((b) => (points ? ensureCriteriaLevels(b) : b)),
-    )
+    allBlocks.push(...(points ? (await repairCriteriaLevels(partBlocks)).map(ensureCriteriaLevels) : partBlocks))
   }
 
   reportStage('finalize')
